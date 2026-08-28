@@ -1,159 +1,106 @@
-# 🌊 AllVibesDemo
+# ☀️ Sara's Classroom Daily Log & Parent Reporting System
 
-> **Open-ended work, powered by agentic AI.** Pick your vibe — **Claude Code**, **Codex**, **Antigravity CLI**, or **OpenWeights** — then describe what you want and watch it get built.
-
-This repo is a sandbox for open-ended work using agentic AI coding tools. It doesn't ship a finished app. Instead, it ships **four ready-to-run environments**, each preloaded with a different agentic AI tool. You bring the ideas; the agent writes, runs, and iterates on the code for you.
-
-The rest of this README shows what a single prompt can turn into. Almost every example below is a prompt you can paste into any of the four tools.
+A lightweight, mobile-friendly and laptop-friendly daily reporting application built for special education teacher Sara. Designed to make recording daily observations and sending text-only email notes to parents effortless, fast, and 100% free.
 
 ---
 
-## ✨ So… what is "agentic AI"?
+## ✨ Features at a Glance
 
-You've probably used a chatbot that *answers* questions. An **agent** goes further: it can *do* things — read and write files, run commands, fix its own mistakes, and keep going until the job is done.
-
-With a normal chatbot you ask *"how do I simulate heat flow?"* and it pastes you a tutorial to read.
-With an **agentic** tool you say *"make me a heat simulation"* and it writes the files, installs what it needs, runs the program, notices the error, fixes it, and shows you the result.
-
-That loop — **prompt → build → run → fix → show you** — is what makes these tools feel different from a chatbot. You're not writing code. You're *directing* code being written in front of you.
-
----
-
-## 🧰 The four "vibes" in this repo
-
-Each folder under `.devcontainer/` is a complete, one-click environment. Open one in [VS Code](https://code.visualstudio.com/) (with the Dev Containers extension) or [GitHub Codespaces](https://github.com/features/codespaces), and the tool installs itself automatically.
-
-| Folder | Tool | What it is |
-|---|---|---|
-| `.devcontainer/claude/` | **Claude Code** | Anthropic's terminal coding agent |
-| `.devcontainer/codex/` | **Codex CLI** | OpenAI's terminal coding agent |
-| `.devcontainer/gemini/` | **Antigravity CLI** | Google's terminal coding agent |
-| `.devcontainer/openweights/` | **OpenWeights (pi)** | Open-weight models via Ollama Cloud + web access |
-
-The prompts in the next section are **tool-agnostic** — paste the same words into any of the four and you'll get a working program. Different tools, same one-sentence spark.
-
-> 💡 **Tip:** Try the *same* prompt in two different tools and compare. It's interesting to see how Claude, Codex, Antigravity, and an open-weight model each interpret your idea differently.
+* **📱 Mobile & Laptop Ready**: Touch-friendly interface with large buttons and clean contrast.
+* **👦 Fast Student Selector**: Quick tab selector for classroom students with completion badges.
+* **📋 Customizable Categories**: Preconfigured dropdowns for Breakfast, Rest/Nap, Behavior, Therapy, etc., with easy-to-change defaults (like *"No report"*).
+* **📝 Notes 1 & Notes 2 with Voice Dictation**: Two separate notes boxes with built-in voice-to-text dictation using your phone or laptop microphone.
+* **✉️ 1-Click Automated Emails**:
+  * Formatted text-only daily report sent to each student's parents/guardians.
+  * Master consolidated summary report containing all students sent to Sara (and admin/testers).
+* **🛡️ Safeguards & Warnings**:
+  * **"Are you sure?"** confirmation modal before sending emails.
+  * **Already Sent Today** status indicator warning against duplicate sends.
+  * **"Reset for Next Day"** button (guarded by confirmation) to clear notes and restore defaults.
+* **⚙️ Flexible Free Email Dispatch**:
+  * **Google App Password**: Sends directly from your or Sara's Gmail account.
+  * **Brevo API (Free Tier)**: 300 free emails/day.
+  * **Test Simulator Mode**: Zero-setup preview and testing without sending real emails.
+* **🔄 Cross-Device Synchronization**: Make changes on your laptop or phone; state stays synced with snappy 0ms instant local editing.
+* **🔐 30-Day Passcode Persistence**: Simple passcode security that remembers your phone or laptop for 30 days.
 
 ---
 
-## 🚀 Try this: real simulation software from a single sentence
+## 🚀 Quick Start (Running Locally)
 
-You don't need to know physics, math, or a single line of Python. You just need to describe the *vibe* of what you want to watch happen. Below are **real, working prompts** — plain English, beginner-friendly — that produce working simulation programs in any of the four tools.
+### 1. Install Dependencies
+```bash
+npm install
+```
 
-For each one you'll see:
-- a **starter prompt** (copy-paste this first),
-- a **level-up prompt** (a second message to send after, showing how you steer the agent),
-- and **what you'll end up with**.
+### 2. Run the Development Server
+```bash
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-> The prompts are the point. The agent writes the code — you never have to.
-
-### 🌬️ 1. Fluid dynamics — swirling smoke in a box
-
-> **Prompt:** *"Write a Python program that simulates a 2D fluid, like swirling smoke inside a box. Animate it in real time so I can watch the flow move."*
-
-**What you'll get:** A live, animated 2D fluid solver — dye and velocity swirling around, rendered as a color field. The classic "stable fluids" look, running in a window.
-
-> **Level-up prompt:** *"Now let me click and drag with the mouse to push the fluid around."*
-
-**What you'll get next:** Mouse interaction added — drag to stir the smoke, release, and watch the eddies settle. You asked one sentence; the agent updated the rendering loop, wired up the mouse, and re-ran it.
+* **Default Passcode**: `sara2026` (you can customize this anytime in Settings).
 
 ---
 
-### 🔥 2. Heat transfer — a hot plate cooling down
+## 🧪 Testing the System (Fake Students Sandbox)
 
-> **Prompt:** *"Simulate heat spreading across a square metal plate. Make the center start hot and the edges stay cold. Animate the temperature with colors."*
+The app comes preloaded with **3 sample students**:
+* **Alex T.** (`alex-parent-test@example.com`)
+* **Jordan M.** (`jordan-parent-test@example.com`)
+* **Sam K.** (`sam-parent-test@example.com`)
 
-**What you'll get:** A 2D heat-diffusion animation — a glowing hot spot in the middle that slowly bleeds outward into cool blue edges, looping forever. Temperature shown as a color map with a legend.
+### How to test:
+1. Open the app and log in with passcode `sara2026`.
+2. Make some changes to the dropdowns, click **Voice Dictate** (or type) in **Notes 1** and **Notes 2**.
+3. Click **"Email Preview"** in the top navigation bar to see the exact text emails generated for parents and the master summary.
+4. Click **"Run Dry-Run Test"** to simulate the complete email dispatch flow.
+5. Go back to the dashboard, click **"Send All Email Reports"** to test the confirmation guard and sent status indicators.
+6. Test **"Reset for Next Day"** to verify that dropdowns revert to default and notes clear.
 
-> **Level-up prompt:** *"Let me click anywhere to drop new heat sources, and add a slider for how well the metal conducts heat."*
-
-**What you'll get next:** Click-to-add heat, a live conductivity slider, and the simulation responding instantly. Turn the slider up and the plate conducts like copper; turn it down and it acts like ceramic. You're now *experimenting* with a model you described in one sentence.
-
----
-
-### 🚗 3. Traffic simulation — phantom traffic jams
-
-> **Prompt:** *"Simulate cars driving around a circular track. Each car speeds up toward a target speed but brakes when the car ahead gets too close. Animate it and show me how traffic jams form on their own."*
-
-**What you'll get:** Dots circling a ring road that, surprisingly, *spontaneously bunch up* into jams even though nobody caused them — the "phantom jam" effect, emerging from simple rules.
-
-> **Level-up prompt:** *"Add a button that drops a few slow trucks onto the road and let me watch what happens to the flow."*
-
-**What you'll get next:** A button to inject slow vehicles and a live readout of average speed. You'll see a single truck send a backwards-propagating wave through the traffic. Traffic-engineering behavior you can experiment with.
+### Running Automated Unit Tests
+```bash
+npm test
+```
 
 ---
 
-## 🧪 Even more ideas to try (one prompt each)
+## ⚙️ Setting Up Real Email Sending
 
-These are working programs waiting inside a single sentence. Paste any of them, then keep talking to refine:
+When you are ready to send live emails:
 
-> *"Simulate a predator–prey ecosystem with wolves and rabbits. Plot how both populations change over time and animate the animals moving around a field."*
+### Option A: Using Gmail with Google App Password (Recommended)
+1. Log into your Google Account and visit [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords).
+2. Enter "Sara Daily Reports" as the app name and click **Create**.
+3. Google will display a 16-letter password (e.g. `abcd efgh ijkl mnop`).
+4. In the app, go to **Settings** → **Email Delivery Setup**:
+   * Select **✉️ Gmail (App Password)**.
+   * Enter your Gmail address and paste the 16-letter password.
+   * Click **Save Changes**.
+5. *Tip: You can test with your own Gmail first, and later switch it to Sara's Gmail!*
 
-> *"Make a 2D solar system simulator. Let me drop in planets by clicking and watch them orbit a star using real gravity."*
-
-> *"Build a double pendulum simulator and animate it. Make it draw the trail so I can see the chaotic patterns it creates."*
-
-> *"Simulate a flock of birds using the boids algorithm and animate them flying around obstacles."*
-
-> *"Make a forest-fire spread simulation on a grid. Start one fire and show it spreading through trees, with wind direction I can change."*
-
-> *"Simulate waves on a string — pluck it and watch the wave travel and reflect off the ends."*
-
-> *"Build Conway's Game of Life with a clickable grid where I can draw starting patterns and watch them evolve."*
-
-> *"Simulate diffusion-limited aggregation — particles randomly walking and sticking together to grow snowflake-like structures."*
-
-Each of those is a working program, and each started as one line of English.
+### Option B: Using Brevo (Free 300 emails/day)
+1. Sign up for a free account at [brevo.com](https://www.brevo.com).
+2. Grab your free API key under **SMTP & API**.
+3. Paste the API key into **Settings** → **Email Delivery Setup**.
 
 ---
 
-## 🪄 The pattern worth noticing
+## 🚢 Free Hosting & Transferring to Sara's GitHub
 
-Notice the shape of every example above:
+This app is built with standard Next.js and has zero proprietary database locks.
 
-1. **Say what you want to watch happen** (one sentence).
-2. **Watch the agent build and run it.**
-3. **Say one more thing** — *"now let me click to add heat sources"* — and it just happens.
+### Deploying to Free Hosting (Vercel / Cloudflare Pages / Netlify / Render)
+1. Push this repository to your GitHub account.
+2. Go to [vercel.com](https://vercel.com) (or Cloudflare Pages), sign in with GitHub, and click **Add New Project**.
+3. Select this repository and click **Deploy** (100% free tier).
 
-That second message is the useful part. You didn't edit a file. You didn't debug a stack trace. You just *described a new wish*, and the code reshaped itself. That loop — **wish → watch → wish again** — is the whole workflow. Once you're used to it, this approach can save time compared with writing everything by hand.
-
-> 🎯 **A useful beginner skill:** learn to describe the *result* you want, not the *steps* to get there. *"Make heat spread and let me click to add sources"* tends to work better than *"initialize a 2D array and apply the finite-difference Laplacian"*. Let the agent handle the how; you own the what.
-
----
-
-## 🧭 How to use this repo
-
-1. **Pick a vibe.** Claude, Codex, Antigravity, or OpenWeights — they all do the same kind of work.
-2. **Open its folder as a dev container.** In VS Code: *Dev Containers: Open Folder in Container…* → choose e.g. `.devcontainer/claude`. In Codespaces: create a codespace from the same subfolder. The tool installs itself.
-3. **Start the agent** from the repo root (see the table below).
-4. **Paste a prompt** from this README — or make up your own.
-5. **Watch it build.** Then send a follow-up. Then another. That's it.
-
----
-
-## ▶️ Running each agent
-
-Each tool is just one command, run from the repo root inside its container. On first launch each will ask you to sign in (or you can set an API key ahead of time).
-
-| Tool | Command | First-run sign-in |
-|---|---|---|
-| **Claude Code** | `claude` | Opens a browser to log in with your Anthropic account (or set `ANTHROPIC_API_KEY`). If no browser opens, it prints a URL to copy. |
-| **Codex** | `codex` | Sign in with your ChatGPT account (recommended) or an OpenAI API key; opens a browser. |
-| **Antigravity CLI** | `agy` | Run `agy` and follow the onboarding wizard to sign in with your Google account (free tier available). |
-| **OpenWeights (pi)** | `pi` | Run `/login`, pick *Use an API key* → *Ollama Cloud*, and paste a key from [ollama.com](https://ollama.com). |
-
-After that, just type your prompt and press Enter. The same prompts work in all four — only the sign-in step differs.
-
----
-
-## 🌱 This repo is intentionally empty
-
-There are no example programs checked in here on purpose. The point isn't to *read* someone else's finished simulations — it's to **generate your own**. Pick a prompt above, paste it into any of the four tools, and within a few minutes you'll have a simulation you started from a sentence.
-
-Then change one word and watch the result change.
+### Transferring to Sara's GitHub Account
+* Whenever you're ready, you can either:
+  1. Transfer the GitHub repository directly to Sara's GitHub account via GitHub repository settings (**Settings** → **Danger Zone** → **Transfer ownership**).
+  2. Or have Sara fork/clone the repo and deploy it to her own free Vercel account.
 
 ---
 
 ## 📄 License
-
-[MIT](./LICENSE) © 2026 Wyatt Horne.
+MIT © 2026. Built with care for special education teachers and families.
