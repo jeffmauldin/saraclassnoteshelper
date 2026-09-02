@@ -13,7 +13,8 @@ tsconfig.tsbuildinfo
 next-env.d.ts
 
 # Production / Temporary data
-/.data/
+/.data/*
+!/.data/app_state.json
 *.log
 
 # Environment variables & local configs

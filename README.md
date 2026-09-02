@@ -43,6 +43,37 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
+## 🐳 Developing with Docker Desktop & VS Code (Dev Containers)
+
+If you are developing on a machine with **Docker Desktop** and **VS Code**:
+
+1. **Prerequisites**:
+   * Make sure **Docker Desktop** is installed and running.
+   * In VS Code, install the **Dev Containers** extension (`ms-vscode-remote.remote-containers`).
+
+2. **Clone and Open**:
+   ```bash
+   git clone https://github.com/jeffmauldin/saraclassnoteshelper.git
+   cd saraclassnoteshelper
+   code .
+   ```
+
+3. **Reopen in Container**:
+   * VS Code will automatically detect the configuration and show a notification:  
+     *"Folder contains a Dev Container configuration file. Reopen in Container"*.
+   * Click **Reopen in Container** (or press `Ctrl+Shift+P` / `Cmd+Shift+P` and choose **Dev Containers: Reopen in Container**).
+
+4. **Automatic Setup**:
+   * Docker will build the container with Node.js LTS, Antigravity CLI (`agy`), and run `npm install` automatically.
+   * Port `3000` is automatically forwarded to `http://localhost:3000`.
+   * Start developing immediately:
+     ```bash
+     npm run dev
+     ```
+
+
+---
+
 ## 🧪 Testing the System (Fake Students Sandbox)
 
 The app comes preloaded with **3 sample students**:

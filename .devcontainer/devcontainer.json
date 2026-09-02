@@ -1,11 +1,26 @@
 {
-    "name": "DevEnviron Base",
+    "name": "Sara Class Notes Helper",
     "image": "mcr.microsoft.com/devcontainers/python:3.12-bookworm",
     "features": {
-        // Installs a modern Node.js version (latest LTS or specific)
         "ghcr.io/devcontainers/features/node:1": {
             "version": "lts"
         }
     },
-    "postCreateCommand": "sudo apt-get update && sudo apt-get install -y vim curl",
+    "forwardPorts": [3000],
+    "portsAttributes": {
+        "3000": {
+            "label": "Web App",
+            "onAutoForward": "notify"
+        }
+    },
+    "postCreateCommand": "sudo apt-get update && sudo apt-get install -y vim curl && curl -fsSL https://antigravity.google/cli/install.sh | bash && npm install",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "dbaeumer.vscode-eslint",
+                "bradlc.vscode-tailwindcss",
+                "esbenp.prettier-vscode"
+            ]
+        }
+    }
 }

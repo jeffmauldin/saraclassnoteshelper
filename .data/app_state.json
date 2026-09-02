@@ -1,0 +1,214 @@
+{
+  "students": [
+    {
+      "id": "student-1",
+      "name": "Alex T.",
+      "parentNames": "Taylor Family",
+      "emails": [
+        "alex-parent-test@example.com"
+      ]
+    },
+    {
+      "id": "student-2",
+      "name": "Jordan M.",
+      "parentNames": "Miller Family",
+      "emails": [
+        "jordan-parent-test@example.com"
+      ]
+    },
+    {
+      "id": "student-3",
+      "name": "Sam K.",
+      "parentNames": "King Family",
+      "emails": [
+        "sam-parent-test@example.com"
+      ]
+    }
+  ],
+  "categories": [
+    {
+      "id": "cat-breakfast",
+      "name": "Breakfast Report",
+      "defaultOptionId": "opt-bk-none",
+      "options": [
+        {
+          "id": "opt-bk-none",
+          "label": "No report"
+        },
+        {
+          "id": "opt-bk-all",
+          "label": "Ate all / ate well"
+        },
+        {
+          "id": "opt-bk-some",
+          "label": "Ate some food"
+        },
+        {
+          "id": "opt-bk-none-ate",
+          "label": "Did not eat"
+        },
+        {
+          "id": "opt-bk-refused",
+          "label": "Refused meal"
+        }
+      ]
+    },
+    {
+      "id": "cat-rest",
+      "name": "Rest / Nap Information",
+      "defaultOptionId": "opt-rest-none",
+      "options": [
+        {
+          "id": "opt-rest-none",
+          "label": "No report"
+        },
+        {
+          "id": "opt-rest-nap",
+          "label": "Took a good nap"
+        },
+        {
+          "id": "opt-rest-quiet",
+          "label": "Rested quietly (no sleep)"
+        },
+        {
+          "id": "opt-rest-no",
+          "label": "Did not take nap"
+        },
+        {
+          "id": "opt-rest-restless",
+          "label": "Restless / needed soothing"
+        }
+      ]
+    },
+    {
+      "id": "cat-behavior",
+      "name": "Basic Behavior & Mood",
+      "defaultOptionId": "opt-beh-none",
+      "options": [
+        {
+          "id": "opt-beh-none",
+          "label": "No report"
+        },
+        {
+          "id": "opt-beh-well",
+          "label": "Well behaved / happy & calm"
+        },
+        {
+          "id": "opt-beh-assist",
+          "label": "Cooperative with minor redirection"
+        },
+        {
+          "id": "opt-beh-uncoop",
+          "label": "Uncooperative / agitated"
+        },
+        {
+          "id": "opt-beh-hurt",
+          "label": "Hurt another student / physical incident"
+        }
+      ]
+    },
+    {
+      "id": "cat-therapy",
+      "name": "Sensory & Speech / Therapy",
+      "defaultOptionId": "opt-th-none",
+      "options": [
+        {
+          "id": "opt-th-none",
+          "label": "No report"
+        },
+        {
+          "id": "opt-th-great",
+          "label": "Great session / fully engaged"
+        },
+        {
+          "id": "opt-th-break",
+          "label": "Sensory break requested and helpful"
+        },
+        {
+          "id": "opt-th-none-today",
+          "label": "No therapy scheduled today"
+        }
+      ]
+    },
+    {
+      "id": "cat-1787951787254",
+      "name": "Lunch Report",
+      "defaultOptionId": "opt-1787951787254-none",
+      "options": [
+        {
+          "id": "opt-1787951787254-none",
+          "label": "No report"
+        },
+        {
+          "id": "opt-1787951827468",
+          "label": "ate well"
+        },
+        {
+          "id": "opt-1787951833853",
+          "label": "ate some food"
+        },
+        {
+          "id": "opt-1787951840970",
+          "label": "ate poorly/did not eat"
+        },
+        {
+          "id": "opt-1787951846555",
+          "label": "refused meal"
+        }
+      ]
+    }
+  ],
+  "entries": {
+    "student-1": {
+      "studentId": "student-1",
+      "selections": {
+        "cat-breakfast": "opt-bk-none",
+        "cat-rest": "opt-rest-none",
+        "cat-behavior": "opt-beh-none",
+        "cat-therapy": "opt-th-none"
+      },
+      "notes1": "",
+      "notes2": ""
+    },
+    "student-2": {
+      "studentId": "student-2",
+      "selections": {
+        "cat-breakfast": "opt-bk-some",
+        "cat-rest": "opt-rest-nap",
+        "cat-behavior": "opt-beh-well",
+        "cat-therapy": "opt-th-great",
+        "cat-1787951787254": "opt-1787951827468"
+      },
+      "notes1": "Very good day with Alex.",
+      "notes2": ""
+    },
+    "student-3": {
+      "studentId": "student-3",
+      "selections": {
+        "cat-breakfast": "opt-bk-none",
+        "cat-rest": "opt-rest-none",
+        "cat-behavior": "opt-beh-none",
+        "cat-therapy": "opt-th-none"
+      },
+      "notes1": "",
+      "notes2": ""
+    }
+  },
+  "currentDate": "2026-08-28",
+  "sentDate": null,
+  "lastResetDate": "2026-08-28",
+  "settings": {
+    "passphrase": "sara2026",
+    "emailSettings": {
+      "provider": "simulator",
+      "gmailUser": "sara.specialed.demo@gmail.com",
+      "gmailAppPassword": "",
+      "brevoApiKey": "",
+      "fromName": "Sara (Special Education Teacher)",
+      "masterRecipients": [
+        "sara-teacher@example.com",
+        "my-test-email@example.com"
+      ]
+    }
+  }
+}
