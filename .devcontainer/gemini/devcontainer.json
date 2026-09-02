@@ -13,7 +13,7 @@
             "onAutoForward": "notify"
         }
     },
-    "postCreateCommand": "sudo apt-get update && sudo apt-get install -y vim curl && curl -fsSL https://antigravity.google/cli/install.sh | bash && sudo ln -sf /home/vscode/.local/bin/agy /usr/local/bin/agy && npm install",
+    "postCreateCommand": "sudo apt-get update && sudo apt-get install -y vim curl && npm install && (curl -fsSL https://antigravity.google/cli/install.sh | bash || true) && (sudo ln -sf /home/vscode/.local/bin/agy /usr/local/bin/agy || true)",
     "customizations": {
         "vscode": {
             "extensions": [
