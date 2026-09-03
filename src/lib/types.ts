@@ -1,3 +1,23 @@
+export type ClassroomId = "sara" | "megan";
+export type UserRole = "admin" | "teacher";
+
+export interface ClassroomProfile {
+  id: ClassroomId;
+  name: string;
+  teacherName: string;
+  icon: string;
+  themeColor: string;
+  defaultPasscode: string;
+  emailFromName: string;
+}
+
+export interface AuthSession {
+  authenticated: boolean;
+  role: UserRole;
+  classroomId: ClassroomId | "all";
+  expiresAt: number;
+}
+
 export interface Student {
   id: string;
   name: string;
@@ -38,9 +58,11 @@ export interface EmailSettings {
 export interface AppSettings {
   passphrase: string;
   emailSettings: EmailSettings;
+  adminPassphrase?: string;
 }
 
 export interface AppState {
+  classroomId?: ClassroomId;
   students: Student[];
   categories: Category[];
   entries: Record<string, DailyStudentEntry>; // studentId -> DailyStudentEntry
@@ -63,3 +85,4 @@ export interface SendResult {
     error?: string;
   }[];
 }
+

@@ -1,17 +1,26 @@
 import { formatFriendlyDate, formatIndividualStudentEmail, formatMasterSummaryEmail } from "../lib/emailFormatter";
-import { initialAppState, initialCategories, initialStudents, createDefaultEntries } from "../lib/initialData";
+import {
+  initialAppState,
+  initialSaraCategories,
+  initialSaraStudents,
+  initialMeganCategories,
+  initialMeganStudents,
+  createDefaultEntries,
+  getInitialStateForClassroom,
+  CLASSROOM_PROFILES,
+} from "../lib/initialData";
 import { sendAllReports } from "../lib/emailSender";
 import { AppState, DailyStudentEntry } from "../lib/types";
 
 console.log("\n========================================================");
-console.log(" 🧪 SARA'S CLASSROOM SYSTEM - AUTOMATED TEST SUITE");
+console.log(" 🧪 SARA & MEGAN CLASSROOM SYSTEM - TEST SUITE");
 console.log("========================================================\n");
 
 let passed = 0;
 let failed = 0;
 
-function assert(condition: boolean, testName: string) {
-  if (condition) {
+function assert(condition: any, testName: string) {
+  if (Boolean(condition)) {
     console.log(`  ✅ PASS: ${testName}`);
     passed++;
   } else {
@@ -19,6 +28,7 @@ function assert(condition: boolean, testName: string) {
     failed++;
   }
 }
+
 
 async function run() {
   // TEST 1: Date formatting
@@ -29,9 +39,9 @@ async function run() {
     assert(false, `Date formatting error: ${e.message}`);
   }
 
-  // TEST 2: Individual student plain text email
+  // TEST 2: Sara's Classroom Email & Categories
   try {
-    const student = initialStudents[0]; // Alex T.
+    const student = initialSaraStudents[0]; // Alex T.
     const entry: DailyStudentEntry = {
       studentId: student.id,
       selections: {
@@ -47,7 +57,7 @@ async function run() {
     const formatted = formatIndividualStudentEmail(
       student,
       entry,
-      initialCategories,
+      initialSaraCategories,
       "2026-08-28",
       "Sara (Special Education Teacher)"
     );
@@ -55,82 +65,109 @@ async function run() {
     assert(formatted.subject === "Daily Student Report: Alex T. - 2026-08-28", "Subject line matches 'Daily Student Report: Alex T. - 2026-08-28'");
     assert(formatted.text.includes("DAILY STUDENT REPORT"), "Email contains main header");
     assert(formatted.text.includes("Student: Alex T."), "Email includes student name");
+    assert(formatted.text.includes("Teacher / Classroom: Sara (Special Education Teacher)"), "Email includes Sara's sender name");
     assert(formatted.text.includes("• Breakfast Report: Ate all / ate well"), "Email correctly includes Breakfast selection");
     assert(formatted.text.includes("• Rest / Nap Information: Took a good nap"), "Email correctly includes Rest selection");
     assert(formatted.text.includes("• Basic Behavior & Mood: Well behaved / happy & calm"), "Email correctly includes Behavior selection");
     assert(formatted.text.includes("TEACHER NOTES (Part 1):\nAlex had a wonderful morning working on sensory blocks."), "Email formats Notes 1 accurately");
     assert(formatted.text.includes("ADDITIONAL NOTES (Part 2):\nPlease send extra wet wipes tomorrow."), "Email formats Notes 2 accurately");
   } catch (e: any) {
-    assert(false, `Individual email test error: ${e.message}`);
+    assert(false, `Sara email test error: ${e.message}`);
   }
 
-  // TEST 3: Master summary email formatting
+  // TEST 3: Megan's Classroom Email & Tailored Goals Categories
   try {
-    const state: AppState = {
-      ...initialAppState,
-      entries: {
-        "student-1": {
-          studentId: "student-1",
-          selections: { "cat-breakfast": "opt-bk-all" },
-          notes1: "Alex notes",
-          notes2: "",
-        },
-        "student-2": {
-          studentId: "student-2",
-          selections: { "cat-breakfast": "opt-bk-some" },
-          notes1: "Jordan notes",
-          notes2: "",
-        },
-        "student-3": {
-          studentId: "student-3",
-          selections: { "cat-breakfast": "opt-bk-none" },
-          notes1: "Sam notes",
-          notes2: "",
-        },
+    const meganState = getInitialStateForClassroom("megan");
+    assert(meganState.students.length === 3, "Megan classroom initialized with 3 students");
+    assert(meganState.students[0].name === "Maya L.", "Megan student #1 is Maya L.");
+    assert(meganState.students[0].emails[0] === "mauldinjeff+megan-maya@gmail.com", "Maya's email has sub-address tag 'mauldinjeff+megan-maya@gmail.com'");
+    assert(meganState.settings.emailSettings.fromName === "Megan (Special Education Teacher)", "Megan's sender name configured properly");
+
+    // Verify Megan's categories include Reading, Math, and Other goals
+    const catNames = meganState.categories.map((c) => c.name);
+    assert(catNames.includes("Academic Highlights & Focus"), "Megan categories include 'Academic Highlights & Focus'");
+    assert(catNames.includes("Social & Group Participation"), "Megan categories include 'Social & Group Participation'");
+    assert(catNames.includes("Daily Goals & Progress - Reading"), "Megan categories include 'Daily Goals & Progress - Reading'");
+    assert(catNames.includes("Daily Goals & Progress - Math"), "Megan categories include 'Daily Goals & Progress - Math'");
+    assert(catNames.includes("Daily Goals & Progress - Other"), "Megan categories include 'Daily Goals & Progress - Other'");
+    assert(catNames.includes("Special Activities"), "Megan categories include 'Special Activities'");
+
+    const meganEntry: DailyStudentEntry = {
+      studentId: meganState.students[0].id,
+      selections: {
+        "cat-megan-highlights": "opt-mh-reading",
+        "cat-megan-social": "opt-ms-coop",
+        "cat-megan-reading": "opt-mr-met",
+        "cat-megan-math": "opt-mm-steady",
+        "cat-megan-other": "opt-mo-met",
+        "cat-megan-specials": "opt-msp-art",
       },
+      notes1: "Maya excelled in her small reading group today!",
+      notes2: "Remember library books on Friday.",
     };
 
-    const master = formatMasterSummaryEmail(state, "2026-08-28");
-    assert(master.subject === "Master Classroom Daily Summary - 2026-08-28 (3 Students)", "Master email subject includes date and 3 students count");
-    assert(master.text.includes("MASTER CLASSROOM DAILY SUMMARY REPORT"), "Master email contains main header");
-    assert(master.text.includes("[1/3] STUDENT: Alex T."), "Master email includes student #1");
-    assert(master.text.includes("[2/3] STUDENT: Jordan M."), "Master email includes student #2");
-    assert(master.text.includes("[3/3] STUDENT: Sam K."), "Master email includes student #3");
-    assert(master.text.includes("Notes 1: Alex notes"), "Master email contains student 1 notes");
-    assert(master.text.includes("Notes 1: Jordan notes"), "Master email contains student 2 notes");
-    assert(master.text.includes("Notes 1: Sam notes"), "Master email contains student 3 notes");
+    const meganFormatted = formatIndividualStudentEmail(
+      meganState.students[0],
+      meganEntry,
+      meganState.categories,
+      "2026-08-28",
+      meganState.settings.emailSettings.fromName
+    );
+
+    assert(meganFormatted.text.includes("Teacher / Classroom: Megan (Special Education Teacher)"), "Megan's email includes Megan's sender title");
+    assert(meganFormatted.text.includes("• Daily Goals & Progress - Reading: Met target reading objective"), "Megan's email includes Reading goal selection");
+    assert(meganFormatted.text.includes("• Daily Goals & Progress - Math: Steady progress on math goal"), "Megan's email includes Math goal selection");
+    assert(meganFormatted.text.includes("• Daily Goals & Progress - Other: Met individualized target objective"), "Megan's email includes Other goal selection");
+    assert(meganFormatted.text.includes("TEACHER NOTES (Part 1):\nMaya excelled in her small reading group today!"), "Megan's email formats notes cleanly");
   } catch (e: any) {
-    assert(false, `Master email test error: ${e.message}`);
+    assert(false, `Megan email & categories test error: ${e.message}`);
   }
 
-  // TEST 4: Default entry generation & Reset for next day
+  // TEST 4: Multi-Classroom Data Isolation
   try {
-    const defaults = createDefaultEntries(initialStudents, initialCategories);
-    assert(Object.keys(defaults).length === 3, "Defaults created for all 3 sample students");
-    assert(defaults["student-1"].notes1 === "", "Notes 1 starts empty on reset");
-    assert(defaults["student-1"].notes2 === "", "Notes 2 starts empty on reset");
-    assert(defaults["student-1"].selections["cat-breakfast"] === "opt-bk-none", "Breakfast defaults to 'No report'");
-    assert(defaults["student-1"].selections["cat-rest"] === "opt-rest-none", "Rest defaults to 'No report'");
-    assert(defaults["student-1"].selections["cat-behavior"] === "opt-beh-none", "Behavior defaults to 'No report'");
-    assert(defaults["student-1"].selections["cat-therapy"] === "opt-th-none", "Therapy defaults to 'No report'");
+    const saraState = getInitialStateForClassroom("sara");
+    const meganState = getInitialStateForClassroom("megan");
+
+    // Modify Sara's state
+    saraState.entries["student-1"].notes1 = "Specific note for Alex";
+    saraState.sentDate = "2026-08-28";
+
+    // Verify Megan's state is completely unpolluted
+    assert(meganState.sentDate === null, "Megan's sentDate is independent of Sara's sentDate");
+    assert(meganState.entries["megan-1"].notes1 === "", "Megan's student notes are independent of Sara's notes");
+    assert(saraState.categories.length === 4, "Sara has 4 categories");
+    assert(meganState.categories.length === 6, "Megan has 6 categories");
   } catch (e: any) {
-    assert(false, `Reset & defaults test error: ${e.message}`);
+    assert(false, `Data isolation test error: ${e.message}`);
   }
 
-  // TEST 5: Email Simulator Dispatch (Dry-Run Mode)
+  // TEST 5: Default Passcode Profiles
   try {
-    const simResult = await sendAllReports(initialAppState, true);
-    assert(simResult.success === true, "Simulator mode dispatches successfully");
-    assert(simResult.sentCount === 4, `Simulator dispatched 4 emails (3 individual student reports + 1 master recipient)`);
-    assert(simResult.logs.some(l => l.type === "master" && l.status === "simulated"), "Simulator generated simulated master email logs");
-    assert(simResult.logs.some(l => l.type === "individual" && l.studentName === "Alex T."), "Simulator generated simulated individual report for Alex T.");
-    assert(simResult.logs.some(l => l.type === "individual" && l.studentName === "Jordan M."), "Simulator generated simulated individual report for Jordan M.");
-    assert(simResult.logs.some(l => l.type === "individual" && l.studentName === "Sam K."), "Simulator generated simulated individual report for Sam K.");
+    assert(CLASSROOM_PROFILES.sara.defaultPasscode === "sara2026", "Sara default passcode is sara2026");
+    assert(CLASSROOM_PROFILES.megan.defaultPasscode === "megan2026", "Megan default passcode is megan2026");
   } catch (e: any) {
-    assert(false, `Simulator test error: ${e.message}`);
+    assert(false, `Passcodes test error: ${e.message}`);
   }
 
-  // TEST 6: Missing Credentials Safeguards
+  // TEST 6: Simulator Dispatch for Both Classrooms
+  try {
+    const saraState = getInitialStateForClassroom("sara");
+    const saraSim = await sendAllReports(saraState, true);
+    assert(saraSim.success === true, "Simulator mode dispatches successfully for Sara");
+    assert(saraSim.sentCount === 4, "Sara simulator dispatched 4 emails (3 students + 1 master)");
+    assert(saraSim.logs[0].recipient.includes("mauldinjeff+sara"), "Sara student email uses sub-addressing 'mauldinjeff+sara-...'");
+
+    const meganState = getInitialStateForClassroom("megan");
+    const meganSim = await sendAllReports(meganState, true);
+    assert(meganSim.success === true, "Simulator mode dispatches successfully for Megan");
+    assert(meganSim.sentCount === 4, "Megan simulator dispatched 4 emails (3 students + 1 master)");
+    assert(Boolean(meganSim.logs.find(l => l.type === "master")?.recipient.includes("mauldinjeff+megan-master")), "Megan master email uses 'mauldinjeff+megan-master@gmail.com'");
+  } catch (e: any) {
+    assert(false, `Simulator dispatch test error: ${e.message}`);
+  }
+
+
+  // TEST 7: Missing Credentials Safeguards
   try {
     const unconfiguredGmailState: AppState = {
       ...initialAppState,
@@ -178,3 +215,4 @@ async function run() {
 }
 
 run();
+

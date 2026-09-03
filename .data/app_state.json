@@ -165,7 +165,8 @@
         "cat-breakfast": "opt-bk-none",
         "cat-rest": "opt-rest-none",
         "cat-behavior": "opt-beh-none",
-        "cat-therapy": "opt-th-none"
+        "cat-therapy": "opt-th-none",
+        "cat-1787951787254": "opt-1787951787254-none"
       },
       "notes1": "",
       "notes2": ""
@@ -173,13 +174,13 @@
     "student-2": {
       "studentId": "student-2",
       "selections": {
-        "cat-breakfast": "opt-bk-some",
-        "cat-rest": "opt-rest-nap",
-        "cat-behavior": "opt-beh-well",
-        "cat-therapy": "opt-th-great",
-        "cat-1787951787254": "opt-1787951827468"
+        "cat-breakfast": "opt-bk-none",
+        "cat-rest": "opt-rest-none",
+        "cat-behavior": "opt-beh-none",
+        "cat-therapy": "opt-th-none",
+        "cat-1787951787254": "opt-1787951787254-none"
       },
-      "notes1": "Very good day with Alex.",
+      "notes1": "",
       "notes2": ""
     },
     "student-3": {
@@ -188,15 +189,16 @@
         "cat-breakfast": "opt-bk-none",
         "cat-rest": "opt-rest-none",
         "cat-behavior": "opt-beh-none",
-        "cat-therapy": "opt-th-none"
+        "cat-therapy": "opt-th-none",
+        "cat-1787951787254": "opt-1787951787254-none"
       },
       "notes1": "",
       "notes2": ""
     }
   },
-  "currentDate": "2026-08-28",
+  "currentDate": "2026-09-03",
   "sentDate": null,
-  "lastResetDate": "2026-08-28",
+  "lastResetDate": "2026-09-03",
   "settings": {
     "passphrase": "sara2026",
     "emailSettings": {

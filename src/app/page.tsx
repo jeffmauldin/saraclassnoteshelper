@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { AuthGuard } from "@/components/AuthGuard";
+import { AuthGuard, useSession } from "@/components/AuthGuard";
 import { Navbar } from "@/components/Navbar";
 import { StudentTabs } from "@/components/StudentTabs";
 import { CategoryDropdown } from "@/components/CategoryDropdown";
@@ -9,20 +9,19 @@ import { NotesSection } from "@/components/NotesSection";
 import { ActionPanel } from "@/components/ActionPanel";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import {
-  initialAppState,
+  getInitialStateForClassroom,
   createDefaultEntries,
   getTodayDateString,
+  CLASSROOM_PROFILES,
 } from "@/lib/initialData";
 import {
   loadLocalState,
   saveLocalState,
   fetchServerState,
   syncStateToServer,
-  clearAuthSession,
 } from "@/lib/storage";
 import { AppState, SendResult } from "@/lib/types";
-import { formatIndividualStudentEmail, formatMasterSummaryEmail } from "@/lib/emailFormatter";
-import { CheckCircle, AlertTriangle, Info } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 
 export default function DailyDashboardPage() {
   return (
@@ -33,7 +32,8 @@ export default function DailyDashboardPage() {
 }
 
 function DailyDashboardContent() {
-  const [state, setState] = useState<AppState>(initialAppState);
+  const { session, activeClassroomId, switchClassroom, logout } = useSession();
+  const [state, setState] = useState<AppState>(() => getInitialStateForClassroom(activeClassroomId));
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [syncStatus, setSyncStatus] = useState<"saved" | "unsaved" | "syncing" | "error">("saved");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -44,33 +44,37 @@ function DailyDashboardContent() {
   const [showResetModal, setShowResetModal] = useState(false);
   const [isSending, setIsSending] = useState(false);
 
+  const classroomProfile = CLASSROOM_PROFILES[activeClassroomId] || CLASSROOM_PROFILES.sara;
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 4000);
   };
 
-  // Load initial data on mount
+  // Load classroom data whenever activeClassroomId changes
   useEffect(() => {
-    const local = loadLocalState();
+    const local = loadLocalState(activeClassroomId);
     const today = getTodayDateString();
 
-    // If date changed since last session, update currentDate
-    const initialState = {
+    const initialState: AppState = {
       ...local,
+      classroomId: activeClassroomId,
       currentDate: today,
     };
     setState(initialState);
     if (initialState.students.length > 0) {
       setSelectedStudentId(initialState.students[0].id);
+    } else {
+      setSelectedStudentId("");
     }
 
-    // Attempt server sync
     setSyncStatus("syncing");
-    fetchServerState()
+    fetchServerState(activeClassroomId)
       .then((serverState) => {
         if (serverState) {
           setState({
             ...serverState,
+            classroomId: activeClassroomId,
             currentDate: today,
           });
           if (serverState.students.length > 0) {
@@ -82,7 +86,7 @@ function DailyDashboardContent() {
         }
       })
       .catch(() => setSyncStatus("saved"));
-  }, []);
+  }, [activeClassroomId]);
 
   // Update selected student when students list changes
   useEffect(() => {
@@ -92,19 +96,22 @@ function DailyDashboardContent() {
   }, [state.students, selectedStudentId]);
 
   // Handle local state changes (snappy 0ms updates)
-  const updateStateLocally = useCallback((updater: (prev: AppState) => AppState) => {
-    setState((prev) => {
-      const next = updater(prev);
-      saveLocalState(next);
-      setSyncStatus("unsaved");
-      return next;
-    });
-  }, []);
+  const updateStateLocally = useCallback(
+    (updater: (prev: AppState) => AppState) => {
+      setState((prev) => {
+        const next = updater(prev);
+        saveLocalState(next, activeClassroomId);
+        setSyncStatus("unsaved");
+        return next;
+      });
+    },
+    [activeClassroomId]
+  );
 
   // Manual or automatic cloud sync
   const triggerSync = async () => {
     setSyncStatus("syncing");
-    const ok = await syncStateToServer(state);
+    const ok = await syncStateToServer(state, activeClassroomId);
     if (ok) {
       setSyncStatus("saved");
       showToast("All changes saved to cloud!");
@@ -112,11 +119,6 @@ function DailyDashboardContent() {
       setSyncStatus("error");
       showToast("Saved locally (cloud sync offline)");
     }
-  };
-
-  const handleLogout = () => {
-    clearAuthSession();
-    window.location.reload();
   };
 
   // Current active student
@@ -138,7 +140,7 @@ function DailyDashboardContent() {
   // Update category selection for current student
   const handleCategoryChange = (categoryId: string, optionId: string) => {
     updateStateLocally((prev) => {
-      const studentEntry = prev.entries[activeStudent.id] || {
+      const currentEntry = prev.entries[activeStudent.id] || {
         studentId: activeStudent.id,
         selections: {},
         notes1: "",
@@ -150,9 +152,9 @@ function DailyDashboardContent() {
         entries: {
           ...prev.entries,
           [activeStudent.id]: {
-            ...studentEntry,
+            ...currentEntry,
             selections: {
-              ...studentEntry.selections,
+              ...currentEntry.selections,
               [categoryId]: optionId,
             },
           },
@@ -161,21 +163,22 @@ function DailyDashboardContent() {
     });
   };
 
-  // Update notes
+  // Update notes 1
   const handleNotes1Change = (val: string) => {
     updateStateLocally((prev) => {
-      const studentEntry = prev.entries[activeStudent.id] || {
+      const currentEntry = prev.entries[activeStudent.id] || {
         studentId: activeStudent.id,
         selections: {},
         notes1: "",
         notes2: "",
       };
+
       return {
         ...prev,
         entries: {
           ...prev.entries,
           [activeStudent.id]: {
-            ...studentEntry,
+            ...currentEntry,
             notes1: val,
           },
         },
@@ -183,20 +186,22 @@ function DailyDashboardContent() {
     });
   };
 
+  // Update notes 2
   const handleNotes2Change = (val: string) => {
     updateStateLocally((prev) => {
-      const studentEntry = prev.entries[activeStudent.id] || {
+      const currentEntry = prev.entries[activeStudent.id] || {
         studentId: activeStudent.id,
         selections: {},
         notes1: "",
         notes2: "",
       };
+
       return {
         ...prev,
         entries: {
           ...prev.entries,
           [activeStudent.id]: {
-            ...studentEntry,
+            ...currentEntry,
             notes2: val,
           },
         },
@@ -221,7 +226,7 @@ function DailyDashboardContent() {
       const res = await fetch("/api/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ state }),
+        body: JSON.stringify({ state, classroomId: activeClassroomId }),
       });
 
       const result: SendResult = await res.json();
@@ -232,8 +237,8 @@ function DailyDashboardContent() {
           sentDate: state.currentDate,
         };
         setState(updated);
-        saveLocalState(updated);
-        syncStateToServer(updated);
+        saveLocalState(updated, activeClassroomId);
+        syncStateToServer(updated, activeClassroomId);
         setSyncStatus("saved");
 
         setShowSendModal(false);
@@ -259,11 +264,11 @@ function DailyDashboardContent() {
       lastResetDate: getTodayDateString(),
     };
     setState(updated);
-    saveLocalState(updated);
-    syncStateToServer(updated);
+    saveLocalState(updated, activeClassroomId);
+    syncStateToServer(updated, activeClassroomId);
     setSyncStatus("saved");
     setShowResetModal(false);
-    showToast("Classroom entries reset for next day!");
+    showToast(`${classroomProfile.name} entries reset for next day!`);
   };
 
   return (
@@ -273,7 +278,10 @@ function DailyDashboardContent() {
         currentDate={state.currentDate}
         syncStatus={syncStatus}
         onManualSync={triggerSync}
-        onLogout={handleLogout}
+        onLogout={logout}
+        classroomId={activeClassroomId}
+        userRole={session?.role || "teacher"}
+        onSwitchClassroom={switchClassroom}
       />
 
       {/* Toast Notification */}
@@ -292,22 +300,27 @@ function DailyDashboardContent() {
           selectedStudentId={selectedStudentId}
           onSelectStudent={(id) => {
             setSelectedStudentId(id);
-            // Background save/sync when switching students
-            syncStateToServer(state);
+            syncStateToServer(state, activeClassroomId);
           }}
           entries={state.entries}
         />
 
         {/* Active Student Header Banner */}
-        <div className="bg-gradient-to-r from-sky-600 to-sky-700 text-white rounded-2xl p-4 sm:p-5 shadow-sm flex flex-wrap items-center justify-between gap-3">
+        <div
+          className={`rounded-2xl p-4 sm:p-5 shadow-sm flex flex-wrap items-center justify-between gap-3 text-white transition-colors ${
+            activeClassroomId === "megan"
+              ? "bg-gradient-to-r from-emerald-600 to-teal-700"
+              : "bg-gradient-to-r from-sky-600 to-sky-700"
+          }`}
+        >
           <div>
             <div className="flex items-center space-x-2">
-              <span className="text-xs uppercase font-bold tracking-wider text-sky-200">
-                Recording Report For
+              <span className="text-xs uppercase font-bold tracking-wider opacity-90">
+                {classroomProfile.name} • Recording Report For
               </span>
             </div>
             <h2 className="text-xl sm:text-2xl font-black">{activeStudent.name}</h2>
-            <p className="text-xs text-sky-100 mt-0.5">
+            <p className="text-xs opacity-90 mt-0.5">
               {activeStudent.parentNames ? `${activeStudent.parentNames} • ` : ""}
               {activeStudent.emails?.length > 0
                 ? activeStudent.emails.join(", ")
@@ -359,8 +372,8 @@ function DailyDashboardContent() {
       {/* MODAL 1: Send All Reports Confirmation */}
       <ConfirmModal
         isOpen={showSendModal}
-        title="Send All Daily Email Reports?"
-        message="This will send individual plain text emails to parents/guardians for each student, plus a consolidated master summary to Sara."
+        title={`Send All Daily Reports for ${classroomProfile.name}?`}
+        message={`This will send individual plain text emails to parents/guardians for each student, plus a consolidated master summary to ${classroomProfile.teacherName}.`}
         confirmText="Yes, Send All Reports"
         variant="primary"
         isProcessing={isSending}
@@ -396,13 +409,13 @@ function DailyDashboardContent() {
       {/* MODAL 3: Reset for Next Day Guard */}
       <ConfirmModal
         isOpen={showResetModal}
-        title="Reset All Entries for Next Day?"
+        title={`Reset All Entries for ${classroomProfile.name}?`}
         message="Are you sure you want to reset all students' dropdowns to defaults and clear Notes 1 & Notes 2?"
         confirmText="Yes, Reset Everything"
         variant="danger"
         details={
           <p className="text-rose-800">
-            ⚠️ This will clear today&apos;s typed notes and restore all menu selections to their default &quot;No report&quot; states.
+            ⚠️ This will clear today&apos;s typed notes and restore all menu selections to their default &quot;No report&quot; states for {classroomProfile.name}.
           </p>
         }
         onConfirm={executeReset}

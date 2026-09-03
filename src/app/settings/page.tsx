@@ -2,15 +2,14 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { AuthGuard } from "@/components/AuthGuard";
+import { AuthGuard, useSession } from "@/components/AuthGuard";
 import {
-  initialAppState,
+  getInitialStateForClassroom,
   createDefaultEntries,
-  initialStudents,
-  initialCategories,
+  CLASSROOM_PROFILES,
 } from "@/lib/initialData";
 import { loadLocalState, saveLocalState, syncStateToServer, fetchServerState } from "@/lib/storage";
-import { AppState, Category, Student, EmailProviderType } from "@/lib/types";
+import { AppState, Category, Student, EmailProviderType, ClassroomId } from "@/lib/types";
 import {
   ArrowLeft,
   Save,
@@ -34,7 +33,9 @@ export default function SettingsPage() {
 }
 
 function SettingsContent() {
-  const [state, setState] = useState<AppState>(initialAppState);
+  const { session, activeClassroomId, switchClassroom } = useSession();
+  const profile = CLASSROOM_PROFILES[activeClassroomId] || CLASSROOM_PROFILES.sara;
+  const [state, setState] = useState<AppState>(() => getInitialStateForClassroom(activeClassroomId));
   const [activeTab, setActiveTab] = useState<"students" | "categories" | "email" | "security">("students");
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
 
@@ -47,18 +48,18 @@ function SettingsContent() {
   const [newCategoryName, setNewCategoryName] = useState("");
 
   useEffect(() => {
-    const local = loadLocalState();
+    const local = loadLocalState(activeClassroomId);
     setState(local);
-    fetchServerState().then((serverState) => {
+    fetchServerState(activeClassroomId).then((serverState) => {
       if (serverState) setState(serverState);
     });
-  }, []);
+  }, [activeClassroomId]);
 
   const handleSaveAll = async (overrideState?: AppState) => {
     const toSave = overrideState || state;
     setSaveStatus("Saving...");
-    saveLocalState(toSave);
-    const ok = await syncStateToServer(toSave);
+    saveLocalState(toSave, activeClassroomId);
+    const ok = await syncStateToServer(toSave, activeClassroomId);
     if (ok) {
       setSaveStatus("Settings saved successfully!");
     } else {
@@ -66,6 +67,7 @@ function SettingsContent() {
     }
     setTimeout(() => setSaveStatus(null), 3000);
   };
+
 
   // Student management
   const handleAddStudent = () => {
@@ -200,16 +202,11 @@ function SettingsContent() {
   const handleResetToSampleData = () => {
     if (
       !confirm(
-        "Reset all students and categories to initial default 3 sample students? This will overwrite custom lists."
+        `Reset all students and categories for ${profile.name} to initial defaults? This will overwrite custom lists for ${profile.name}.`
       )
     )
       return;
-    const sample = {
-      ...state,
-      students: initialStudents,
-      categories: initialCategories,
-      entries: createDefaultEntries(initialStudents, initialCategories),
-    };
+    const sample = getInitialStateForClassroom(activeClassroomId);
     setState(sample);
     handleSaveAll(sample);
   };
@@ -218,7 +215,7 @@ function SettingsContent() {
     <div className="min-h-screen bg-slate-50 pb-16">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-xs">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center space-x-3">
             <Link
               href="/"
@@ -228,12 +225,43 @@ function SettingsContent() {
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <div>
-              <h1 className="font-bold text-lg text-gray-900">Settings & Configuration</h1>
-              <p className="text-xs text-gray-500">Manage students, dropdowns, emails & security</p>
+              <div className="flex items-center space-x-2">
+                <h1 className="font-bold text-lg text-gray-900">
+                  {profile.icon} {profile.name} Settings
+                </h1>
+                {session?.role === "admin" && (
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200 flex items-center">
+                    <Shield className="w-2.5 h-2.5 mr-0.5" />
+                    Admin
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-gray-500">
+                Manage students, dropdowns, emails &amp; security for {profile.name}
+              </p>
             </div>
           </div>
 
           <div className="flex items-center space-x-2">
+            {/* Admin Classroom Switcher */}
+            {session?.role === "admin" && (
+              <div className="flex bg-gray-100 p-1 rounded-xl text-xs font-semibold mr-1">
+                {(Object.keys(CLASSROOM_PROFILES) as ClassroomId[]).map((cid) => (
+                  <button
+                    key={cid}
+                    onClick={() => switchClassroom(cid)}
+                    className={`px-3 py-1.5 rounded-lg transition ${
+                      activeClassroomId === cid
+                        ? "bg-white text-gray-900 shadow-xs font-bold"
+                        : "text-gray-500 hover:text-gray-900"
+                    }`}
+                  >
+                    {CLASSROOM_PROFILES[cid].icon} {CLASSROOM_PROFILES[cid].teacherName}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {saveStatus && (
               <span className="text-xs text-emerald-600 font-semibold bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
                 {saveStatus}
@@ -274,7 +302,7 @@ function SettingsContent() {
             }`}
           >
             <ListFilter className="w-4 h-4" />
-            <span>Dropdown Categories ({state.categories.length})</span>
+            <span>Categories &amp; Dropdowns ({state.categories.length})</span>
           </button>
 
           <button
@@ -309,7 +337,7 @@ function SettingsContent() {
             <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-3">
               <h2 className="text-sm font-bold text-gray-900 flex items-center space-x-1.5">
                 <Plus className="w-4 h-4 text-sky-600" />
-                <span>Add New Student</span>
+                <span>Add New Student to {profile.name}</span>
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <input
@@ -331,17 +359,22 @@ function SettingsContent() {
                   placeholder="Parent Emails (comma-separated)"
                   value={newStudentEmails}
                   onChange={(e) => setNewStudentEmails(e.target.value)}
-                  className="px-3.5 py-2.5 text-xs font-medium rounded-xl border border-gray-200 focus:border-sky-500 outline-none"
+                  className="px-3.5 py-2.5 text-xs font-medium rounded-xl border border-gray-200 focus:border-sky-500 outline-none font-mono"
                 />
               </div>
-              <button
-                type="button"
-                onClick={handleAddStudent}
-                disabled={!newStudentName.trim()}
-                className="px-4 py-2 bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-xs transition"
-              >
-                Add Student to Classroom
-              </button>
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                <p className="text-[11px] text-gray-400">
+                  💡 <span className="font-semibold text-gray-600">Testing Tip:</span> Use Gmail sub-addressing (e.g. <code className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-700">mauldinjeff+student@gmail.com</code>) so test reports safely route straight to your inbox!
+                </p>
+                <button
+                  type="button"
+                  onClick={handleAddStudent}
+                  disabled={!newStudentName.trim()}
+                  className="px-4 py-2 bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-xs transition"
+                >
+                  Add Student to Classroom
+                </button>
+              </div>
             </div>
 
             {/* Students List */}

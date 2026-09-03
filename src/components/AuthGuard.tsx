@@ -1,66 +1,164 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Lock, KeyRound, AlertCircle, ArrowRight } from "lucide-react";
-import { checkAuthSession, saveAuthSession } from "@/lib/storage";
+import React, { useState, useEffect, createContext, useContext } from "react";
+import { Lock, KeyRound, AlertCircle, ArrowRight, Shield } from "lucide-react";
+import {
+  getAuthSession,
+  saveAuthSession,
+  clearAuthSession,
+  getActiveClassroomId,
+  setActiveClassroomId as setStoredActiveClassroom,
+} from "@/lib/storage";
+import { AuthSession, ClassroomId, UserRole } from "@/lib/types";
+import { CLASSROOM_PROFILES } from "@/lib/initialData";
+
+interface SessionContextType {
+  session: AuthSession | null;
+  activeClassroomId: ClassroomId;
+  switchClassroom: (id: ClassroomId) => void;
+  logout: () => void;
+}
+
+const SessionContext = createContext<SessionContextType>({
+  session: null,
+  activeClassroomId: "sara",
+  switchClassroom: () => {},
+  logout: () => {},
+});
+
+export function useSession() {
+  return useContext(SessionContext);
+}
 
 interface AuthGuardProps {
   children: React.ReactNode;
 }
 
 export function AuthGuard({ children }: AuthGuardProps) {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [session, setSession] = useState<AuthSession | null>(null);
+  const [activeClassroomId, setActiveClassroomIdState] = useState<ClassroomId>("sara");
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Login form states
+  const [selectedClassroomTab, setSelectedClassroomTab] = useState<ClassroomId | "admin">("sara");
   const [passphrase, setPassphrase] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    const isAuth = checkAuthSession();
-    setIsAuthenticated(isAuth);
+    const existing = getAuthSession();
+    if (existing) {
+      setSession(existing);
+      const active = getActiveClassroomId();
+      // If teacher session is locked to specific classroom, enforce it
+      if (existing.role === "teacher" && existing.classroomId !== "all") {
+        setActiveClassroomIdState(existing.classroomId);
+        setStoredActiveClassroom(existing.classroomId);
+      } else {
+        setActiveClassroomIdState(active);
+      }
+    }
+    setIsLoading(false);
   }, []);
+
+  const switchClassroom = (id: ClassroomId) => {
+    // Only admin can switch classrooms
+    if (session?.role !== "admin") return;
+    setActiveClassroomIdState(id);
+    setStoredActiveClassroom(id);
+  };
+
+  const logout = () => {
+    clearAuthSession();
+    setSession(null);
+    setPassphrase("");
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setLoading(true);
+    setSubmitting(true);
+
+    const requestedClassroom = selectedClassroomTab === "admin" ? undefined : selectedClassroomTab;
 
     try {
       const res = await fetch("/api/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ passphrase }),
+        body: JSON.stringify({
+          passphrase: passphrase.trim(),
+          requestedClassroom,
+        }),
       });
 
       const data = await res.json();
       if (res.ok && data.success) {
-        saveAuthSession();
-        setIsAuthenticated(true);
+        const role: UserRole = data.role || "teacher";
+        const classroomId: ClassroomId | "all" = role === "admin" ? "all" : data.classroomId || "sara";
+        const targetClassroom: ClassroomId =
+          role === "admin"
+            ? (selectedClassroomTab === "megan" ? "megan" : "sara")
+            : (data.classroomId || "sara");
+
+        saveAuthSession(role, classroomId);
+        setStoredActiveClassroom(targetClassroom);
+        setActiveClassroomIdState(targetClassroom);
+        setSession({
+          authenticated: true,
+          role,
+          classroomId,
+          expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
+        });
       } else {
-        setError(data.message || "Incorrect password. Please try again.");
+        setError(data.message || "Incorrect passcode. Please try again.");
       }
     } catch {
-      // Fallback local check if offline
-      if (passphrase === "sara2026") {
-        saveAuthSession();
-        setIsAuthenticated(true);
+      // Offline fallback
+      if (passphrase === "admin2026") {
+        saveAuthSession("admin", "all");
+        setSession({
+          authenticated: true,
+          role: "admin",
+          classroomId: "all",
+          expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
+        });
+      } else if (passphrase === "sara2026") {
+        saveAuthSession("teacher", "sara");
+        setStoredActiveClassroom("sara");
+        setActiveClassroomIdState("sara");
+        setSession({
+          authenticated: true,
+          role: "teacher",
+          classroomId: "sara",
+          expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
+        });
+      } else if (passphrase === "megan2026") {
+        saveAuthSession("teacher", "megan");
+        setStoredActiveClassroom("megan");
+        setActiveClassroomIdState("megan");
+        setSession({
+          authenticated: true,
+          role: "teacher",
+          classroomId: "megan",
+          expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
+        });
       } else {
-        setError("Invalid passcode. Please try again.");
+        setError("Invalid passcode. Please check and try again.");
       }
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
-  if (isAuthenticated === null) {
-    // Loading state while checking localStorage
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
-  if (!isAuthenticated) {
+  if (!session?.authenticated) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-gray-100">
@@ -69,24 +167,72 @@ export function AuthGuard({ children }: AuthGuardProps) {
               <Lock className="w-8 h-8" />
             </div>
             <h1 className="text-xl font-bold text-gray-900">
-              Sara&apos;s Classroom Daily Log
+              Classroom Daily Log &amp; Reporting
             </h1>
             <p className="text-xs text-gray-500 mt-1">
-              Enter your passcode to unlock reports. Recognized devices remain unlocked for 30 days.
+              Select your classroom and enter your passcode. Recognized devices remain logged in for 30 days.
             </p>
+          </div>
+
+          {/* Classroom Selection Pills */}
+          <div className="flex p-1 bg-gray-100 rounded-2xl mb-5 text-xs font-semibold">
+            <button
+              type="button"
+              onClick={() => setSelectedClassroomTab("sara")}
+              className={`flex-1 py-2 rounded-xl transition flex items-center justify-center space-x-1 ${
+                selectedClassroomTab === "sara"
+                  ? "bg-white text-sky-700 shadow-sm"
+                  : "text-gray-500 hover:text-gray-800"
+              }`}
+            >
+              <span>☀️</span>
+              <span>Sara</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedClassroomTab("megan")}
+              className={`flex-1 py-2 rounded-xl transition flex items-center justify-center space-x-1 ${
+                selectedClassroomTab === "megan"
+                  ? "bg-white text-emerald-700 shadow-sm"
+                  : "text-gray-500 hover:text-gray-800"
+              }`}
+            >
+              <span>🌸</span>
+              <span>Megan</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedClassroomTab("admin")}
+              className={`flex-1 py-2 rounded-xl transition flex items-center justify-center space-x-1 ${
+                selectedClassroomTab === "admin"
+                  ? "bg-white text-amber-800 shadow-sm"
+                  : "text-gray-500 hover:text-gray-800"
+              }`}
+            >
+              <Shield className="w-3 h-3" />
+              <span>Admin</span>
+            </button>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="block text-xs font-bold text-gray-700 mb-1">
-                Passcode
+                {selectedClassroomTab === "admin"
+                  ? "Admin Master Passcode"
+                  : `${CLASSROOM_PROFILES[selectedClassroomTab].name} Passcode`}
               </label>
               <div className="relative">
                 <input
                   type="password"
                   value={passphrase}
                   onChange={(e) => setPassphrase(e.target.value)}
-                  placeholder="Enter passcode..."
+                  placeholder={
+                    selectedClassroomTab === "sara"
+                      ? "Enter Sara's passcode..."
+                      : selectedClassroomTab === "megan"
+                      ? "Enter Megan's passcode..."
+                      : "Enter Admin master passcode..."
+                  }
                   autoFocus
                   required
                   className="w-full px-4 py-3 pl-11 rounded-2xl border border-gray-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none text-sm font-medium transition"
@@ -104,27 +250,48 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
             <button
               type="submit"
-              disabled={loading || !passphrase}
+              disabled={submitting || !passphrase}
               className="w-full py-3.5 bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white font-bold text-sm rounded-2xl shadow-md transition flex items-center justify-center space-x-2"
             >
-              {loading ? (
+              {submitting ? (
                 <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
-                  <span>Unlock Daily Log</span>
+                  <span>
+                    Unlock{" "}
+                    {selectedClassroomTab === "admin"
+                      ? "Admin Mode"
+                      : CLASSROOM_PROFILES[selectedClassroomTab].name}
+                  </span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </button>
 
-            <p className="text-[11px] text-center text-gray-400">
-              Default passcode: <code className="bg-gray-100 px-1.5 py-0.5 rounded font-mono">sara2026</code> (changeable in Settings)
-            </p>
+            <div className="text-[11px] text-center text-gray-400 space-y-1 pt-1">
+              <p>
+                Defaults: Sara: <code className="bg-gray-100 px-1 py-0.5 rounded font-mono">sara2026</code> |
+                Megan: <code className="bg-gray-100 px-1 py-0.5 rounded font-mono">megan2026</code> |
+                Admin: <code className="bg-gray-100 px-1 py-0.5 rounded font-mono">admin2026</code>
+              </p>
+            </div>
           </form>
         </div>
       </div>
     );
   }
 
-  return <>{children}</>;
+  return (
+    <SessionContext.Provider
+      value={{
+        session,
+        activeClassroomId,
+        switchClassroom,
+        logout,
+      }}
+    >
+      {children}
+    </SessionContext.Provider>
+  );
 }
+
