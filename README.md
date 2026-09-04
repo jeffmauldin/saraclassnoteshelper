@@ -120,7 +120,7 @@ Each classroom comes pre-loaded with demo students configured with **Gmail sub-a
 ```bash
 npm test
 ```
-Runs 41 automated assertions covering email generation, multi-classroom state isolation, and safeguard validation.
+Runs 44 automated assertions covering email generation, multi-classroom state isolation, cloud storage detection, and safeguard validation.
 
 ---
 
@@ -145,16 +145,23 @@ When you are ready to send live emails:
 
 ---
 
-## 🚢 Free Hosting & Transferring to Sara or Megan
+## 🚢 Free 1-Click Hosting on Vercel (Recommended)
 
 This app is built with standard Next.js and has zero proprietary database locks.
 
-### Deploying to Free Hosting (Vercel / Cloudflare Pages / Netlify / Render)
-1. Push this repository to your GitHub account.
-2. Go to [vercel.com](https://vercel.com) (or Cloudflare Pages), sign in with GitHub, and click **Add New Project**.
-3. Select this repository and click **Deploy** (100% free tier).
+### Deploying to Vercel (100% Free Forever)
+1. **Import to Vercel**:
+   * Sign in to [vercel.com](https://vercel.com) using your GitHub account.
+   * Click **"Add New..."** → **"Project"**.
+   * Select `saraclassnoteshelper` and click **Deploy**.
+2. **Connect Free Cloud Storage for Cross-Device Sync**:
+   * In your new Vercel project dashboard, click the **Storage** tab.
+   * Click **"Create Database"** and select **Upstash Redis** (or KV).
+   * Click **Connect to Project** and accept the defaults.
+   * *That's it!* Vercel automatically populates the `KV_REST_API_URL` and `KV_REST_API_TOKEN` environment variables.
+   * Redeploy once, and teachers' notes will sync across phones, laptops, and home computers with 0ms lag.
 
-### Transferring Ownership
+### Transferring Ownership to Sara or Megan
 * When ready, you can transfer the GitHub repository directly to Sara or Megan via repository settings (**Settings** → **Danger Zone** → **Transfer ownership**), or have them fork/clone and deploy to their own free hosting account.
 
 ---

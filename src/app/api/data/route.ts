@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import { getInitialStateForClassroom } from "@/lib/initialData";
 import { AppState, ClassroomId } from "@/lib/types";
+import { getCloudState, isCloudStorageConfigured, setCloudState } from "@/lib/cloudStorage";
 
 const DATA_DIR = path.join(process.cwd(), ".data");
 
@@ -14,7 +15,7 @@ function getClassroomFilePath(classroomId: ClassroomId): string {
   return path.join(DATA_DIR, `state_${classroomId}.json`);
 }
 
-function readSavedState(classroomId: ClassroomId): AppState {
+function readDiskState(classroomId: ClassroomId): AppState {
   const initial = getInitialStateForClassroom(classroomId);
   const filePath = getClassroomFilePath(classroomId);
   const legacyPath = path.join(DATA_DIR, "app_state.json");
@@ -31,7 +32,7 @@ function readSavedState(classroomId: ClassroomId): AppState {
             ...parsed,
             classroomId: "sara",
           };
-          writeSavedState(migrated, "sara");
+          writeDiskState(migrated, "sara");
           return migrated;
         }
       } catch (migErr) {
@@ -59,12 +60,12 @@ function readSavedState(classroomId: ClassroomId): AppState {
       }
     }
   } catch (e) {
-    console.error(`Error reading data for ${classroomId}, using defaults:`, e);
+    console.error(`Error reading disk data for ${classroomId}, using defaults:`, e);
   }
   return initial;
 }
 
-function writeSavedState(state: AppState, classroomId: ClassroomId): void {
+function writeDiskState(state: AppState, classroomId: ClassroomId): void {
   try {
     if (!fs.existsSync(DATA_DIR)) {
       fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -73,15 +74,65 @@ function writeSavedState(state: AppState, classroomId: ClassroomId): void {
     const toWrite: AppState = { ...state, classroomId };
     fs.writeFileSync(filePath, JSON.stringify(toWrite, null, 2), "utf-8");
   } catch (e) {
-    console.error(`Error saving state for ${classroomId}:`, e);
+    // On serverless environments (e.g. Vercel), disk is read-only
+    console.warn(`Disk write skipped or unavailable for ${classroomId} (expected in serverless):`, e);
   }
+}
+
+async function readSavedState(classroomId: ClassroomId): Promise<AppState> {
+  const initial = getInitialStateForClassroom(classroomId);
+
+  if (isCloudStorageConfigured()) {
+    const cloudState = await getCloudState(classroomId);
+    if (cloudState) {
+      return {
+        ...initial,
+        ...cloudState,
+        classroomId,
+        settings: {
+          ...initial.settings,
+          ...(cloudState.settings || {}),
+          emailSettings: {
+            ...initial.settings.emailSettings,
+            ...(cloudState.settings?.emailSettings || {}),
+          },
+        },
+      };
+    }
+
+    // If not in cloud yet, seed with disk state or initial state
+    const diskFallback = readDiskState(classroomId);
+    await setCloudState(diskFallback, classroomId);
+    return diskFallback;
+  }
+
+  return readDiskState(classroomId);
+}
+
+async function writeSavedState(state: AppState, classroomId: ClassroomId): Promise<void> {
+  const toWrite: AppState = { ...state, classroomId };
+
+  if (isCloudStorageConfigured()) {
+    await setCloudState(toWrite, classroomId);
+  }
+
+  // Always attempt disk write as secondary backup (will silently warn if serverless read-only)
+  writeDiskState(toWrite, classroomId);
 }
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const classroomId = normalizeClassroomId(searchParams.get("classroom"));
-  const state = readSavedState(classroomId);
-  return NextResponse.json({ state });
+  const state = await readSavedState(classroomId);
+  const cloudActive = isCloudStorageConfigured();
+
+  return NextResponse.json({
+    state,
+    storage: {
+      mode: cloudActive ? "cloud" : "local",
+      cloudConfigured: cloudActive,
+    },
+  });
 }
 
 export async function POST(req: NextRequest) {
@@ -94,10 +145,18 @@ export async function POST(req: NextRequest) {
     const classroomId = normalizeClassroomId(
       body.state.classroomId || searchParams.get("classroom")
     );
-    writeSavedState(body.state, classroomId);
-    return NextResponse.json({ success: true, state: body.state });
+    await writeSavedState(body.state, classroomId);
+    const cloudActive = isCloudStorageConfigured();
+
+    return NextResponse.json({
+      success: true,
+      state: body.state,
+      storage: {
+        mode: cloudActive ? "cloud" : "local",
+        cloudConfigured: cloudActive,
+      },
+    });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Failed to save state" }, { status: 500 });
   }
 }
-

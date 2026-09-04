@@ -83,12 +83,13 @@ Welcome! This document provides technical context, architecture guidelines, and 
 │   ├── lib/
 │   │   ├── types.ts           # Core TypeScript types (ClassroomId, UserRole, AppState)
 │   │   ├── initialData.ts     # Preconfigured students & categories for Sara and Megan
+│   │   ├── cloudStorage.ts    # Cloud KV storage adapter (Upstash / Vercel KV) with disk fallback
 │   │   ├── emailFormatter.ts  # Plain-text email generator with date stamps
 │   │   ├── emailSender.ts     # Multi-provider email engine
 │   │   ├── speech.ts          # Web Speech API helper
 │   │   └── storage.ts         # Local-first client cache and sync engine
 │   └── tests/
-│       ├── testSuite.ts       # Main test suite (41 assertions covering both classrooms)
+│       ├── testSuite.ts       # Main test suite (44 assertions covering classrooms & cloud storage)
 │       ├── emailFormatter.test.ts # Tests for individual & master emails
 │       ├── state.test.ts      # Tests for reset and defaults
 │       └── validation.test.ts # Tests for email delivery safeguards
@@ -99,7 +100,7 @@ Welcome! This document provides technical context, architecture guidelines, and 
 ## 🔧 Useful Commands
 
 ```bash
-# Run automated test suite (41 assertions)
+# Run automated test suite (44 assertions)
 npm test
 
 # Start local development server

@@ -203,6 +203,41 @@ async function run() {
     assert(false, `Credentials safeguards test error: ${e.message}`);
   }
 
+  // TEST 8: Cloud Storage Detection & Hybrid Mode
+  try {
+    const { isCloudStorageConfigured } = await import("../lib/cloudStorage");
+    // Ensure clean initial state
+    const originalKvUrl = process.env.KV_REST_API_URL;
+    const originalKvToken = process.env.KV_REST_API_TOKEN;
+    const originalUpstashUrl = process.env.UPSTASH_REDIS_REST_URL;
+    const originalUpstashToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+    delete process.env.KV_REST_API_URL;
+    delete process.env.KV_REST_API_TOKEN;
+    delete process.env.UPSTASH_REDIS_REST_URL;
+    delete process.env.UPSTASH_REDIS_REST_TOKEN;
+
+    assert(isCloudStorageConfigured() === false, "Defaults gracefully to local disk when cloud env vars absent");
+
+    process.env.KV_REST_API_URL = "https://mock-kv.upstash.io";
+    process.env.KV_REST_API_TOKEN = "mock-token";
+    assert(isCloudStorageConfigured() === true, "Detects Vercel KV environment variables (KV_REST_API_URL/TOKEN)");
+
+    delete process.env.KV_REST_API_URL;
+    delete process.env.KV_REST_API_TOKEN;
+    process.env.UPSTASH_REDIS_REST_URL = "https://mock-redis.upstash.io";
+    process.env.UPSTASH_REDIS_REST_TOKEN = "mock-upstash-token";
+    assert(isCloudStorageConfigured() === true, "Detects Upstash Redis environment variables (UPSTASH_REDIS_REST_URL/TOKEN)");
+
+    // Restore environment
+    if (originalKvUrl) process.env.KV_REST_API_URL = originalKvUrl; else delete process.env.KV_REST_API_URL;
+    if (originalKvToken) process.env.KV_REST_API_TOKEN = originalKvToken; else delete process.env.KV_REST_API_TOKEN;
+    if (originalUpstashUrl) process.env.UPSTASH_REDIS_REST_URL = originalUpstashUrl; else delete process.env.UPSTASH_REDIS_REST_URL;
+    if (originalUpstashToken) process.env.UPSTASH_REDIS_REST_TOKEN = originalUpstashToken; else delete process.env.UPSTASH_REDIS_REST_TOKEN;
+  } catch (e: any) {
+    assert(false, `Cloud storage detection test error: ${e.message}`);
+  }
+
   console.log("\n========================================================");
   console.log(` 📊 FINAL RESULTS: ${passed} PASSED, ${failed} FAILED`);
   console.log("========================================================\n");

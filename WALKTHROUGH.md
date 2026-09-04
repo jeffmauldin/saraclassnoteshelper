@@ -102,9 +102,12 @@ The test suite in [`src/tests/testSuite.ts`](file:///workspaces/saraclassnoteshe
   ✅ PASS: Safeguard returned helpful instruction to set Gmail credentials
   ✅ PASS: Missing Brevo API key properly blocked dispatch
   ✅ PASS: Safeguard returned helpful instruction to set Brevo API key
+  ✅ PASS: Defaults gracefully to local disk when cloud env vars absent
+  ✅ PASS: Detects Vercel KV environment variables (KV_REST_API_URL/TOKEN)
+  ✅ PASS: Detects Upstash Redis environment variables (UPSTASH_REDIS_REST_URL/TOKEN)
 
 ========================================================
- 📊 FINAL RESULTS: 41 PASSED, 0 FAILED
+ 📊 FINAL RESULTS: 44 PASSED, 0 FAILED
 ========================================================
 ```
 

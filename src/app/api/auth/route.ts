@@ -2,10 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import { ClassroomId } from "@/lib/types";
+import { getCloudState, isCloudStorageConfigured } from "@/lib/cloudStorage";
 
 const DATA_DIR = path.join(process.cwd(), ".data");
 
-function getCustomPassphrase(classroomId: ClassroomId): string | null {
+async function getCustomPassphrase(classroomId: ClassroomId): Promise<string | null> {
+  // 1. Check cloud storage first if configured
+  if (isCloudStorageConfigured()) {
+    try {
+      const cloudState = await getCloudState(classroomId);
+      if (cloudState?.settings?.passphrase) {
+        return cloudState.settings.passphrase;
+      }
+    } catch (e) {
+      console.warn(`Could not read cloud passphrase for ${classroomId}:`, e);
+    }
+  }
+
+  // 2. Fall back to local disk
   const filePath = path.join(DATA_DIR, `state_${classroomId}.json`);
   const legacyFile = path.join(DATA_DIR, "app_state.json");
 
@@ -20,7 +34,7 @@ function getCustomPassphrase(classroomId: ClassroomId): string | null {
       if (parsed?.settings?.passphrase) return parsed.settings.passphrase;
     }
   } catch (e) {
-    console.warn(`Could not read custom passphrase for ${classroomId}:`, e);
+    console.warn(`Could not read disk passphrase for ${classroomId}:`, e);
   }
   return null;
 }
@@ -29,8 +43,8 @@ export async function POST(req: NextRequest) {
   try {
     const { passphrase, requestedClassroom } = await req.json();
 
-    const saraCustom = getCustomPassphrase("sara");
-    const meganCustom = getCustomPassphrase("megan");
+    const saraCustom = await getCustomPassphrase("sara");
+    const meganCustom = await getCustomPassphrase("megan");
 
     const saraPass = saraCustom || "sara2026";
     const meganPass = meganCustom || "megan2026";
@@ -86,4 +100,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, message: err.message || "Auth error" }, { status: 500 });
   }
 }
-
