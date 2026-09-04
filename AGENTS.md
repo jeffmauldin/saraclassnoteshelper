@@ -1,28 +1,39 @@
 # AGENTS.md
 
-Welcome! This document provides technical context, architecture guidelines, and operational procedures for AI agents (and human developers) maintaining and enhancing the **Sara's Classroom Daily Log & Parent Reporting System**.
+Welcome! This document provides technical context, architecture guidelines, and operational procedures for AI agents (and human developers) maintaining and enhancing the **Classroom Daily Log & Parent Reporting System** for special education teachers **Sara** and **Megan**.
 
 ---
 
 ## 🎯 System Overview
 
-* **Primary User**: Sara, a special education teacher managing a small classroom (<10 students) with severe communication and behavioral needs.
+* **Primary Users**:
+  * **Sara**: Special education teacher managing a classroom with severe communication and behavioral needs.
+  * **Megan**: Special education teacher managing a classroom focusing on academic progress, social participation, and IEP goals.
+  * **Admin**: Observer / administrator who can manage both classrooms seamlessly.
 * **Core Purpose**: Drastically reduce the daily administrative burden of creating, managing, and emailing daily student observation notes and parent reports.
 * **Key Features**:
-  1. Responsive, mobile-first and desktop-friendly web interface.
-  2. Student selector (<10 students) with completion status indicators.
-  3. Fully configurable dropdown categories (e.g., Breakfast, Rest/Nap, Behavior, Therapy) with customizable default options (e.g. "No report").
-  4. Two separate arbitrary note textareas (**Notes 1** and **Notes 2**).
-  5. Built-in **Voice Dictation** (via Web Speech API) for hands-free teacher notes.
-  6. Multi-recipient plain-text email generation:
+  1. **Multi-Classroom Support**: Independent data profiles, students, categories, and settings for each teacher (`sara` and `megan`).
+  2. **Role-Based Authentication**:
+     - `sara2026` unlocks Sara's classroom directly.
+     - `megan2026` unlocks Megan's classroom directly.
+     - `admin2026` unlocks both with an instant switcher dropdown in the navbar.
+     - 30-day session persistence stored securely in browser `localStorage`.
+  3. **Responsive Web Interface**: Large touch targets, high contrast, mobile and desktop friendly.
+  4. **Student Selector**: Fast student selector tabs with completion badges and contact count indicators.
+  5. **Configurable Categories**:
+     - **Sara**: Breakfast Report, Rest / Nap, Basic Behavior & Mood, Sensory & Speech / Therapy, Lunch Report.
+     - **Megan**: Academic Highlights & Focus, Social & Group Participation, Daily Goals & Progress (Reading, Math, Other), Special Activities.
+     - Dynamic defaults (e.g. *"No report"*) and one-tap quick chips.
+  6. **Notes 1 & Notes 2 with Voice Dictation**: Two arbitrary textareas featuring Web Speech API voice dictation.
+  7. **Multi-Recipient Plain-Text Email Generation**:
      - Formatted individual text-only emails for each student's parents/guardians.
-     - Single consolidated master daily summary email for Sara (and admin/testers).
-  7. Safeguards:
-     - "Are you sure?" confirmation modals on both "Send Reports" and "Reset for Next Day".
-     - Visual indicator displaying whether reports have already been sent today, warning against accidental re-sending.
+     - Consolidated master daily summary email for the teacher and admin/testers.
+     - Sub-addressing testing format (`mauldinjeff+sara-...@gmail.com` and `mauldinjeff+megan-...@gmail.com`).
+  8. **Safeguards**:
+     - Confirmation modals before sending reports and resetting for the next day.
+     - "Already Sent Today" banner to prevent accidental duplicate dispatches.
      - "Reset for Next Day" restoring all dropdowns to default and clearing notes.
-  8. 30-day passphrase session persistence on recognized devices.
-  9. Zero-cost multi-provider sending (Google App Password SMTP, Brevo API, and Test Simulator Mode).
+  9. **Zero-Cost Email Sending**: Google App Password SMTP, Brevo API, and Test Simulator Mode.
 
 ---
 
@@ -35,17 +46,22 @@ Welcome! This document provides technical context, architecture guidelines, and 
   - `nodemailer` for Gmail SMTP (using Google App Passwords)
   - Direct REST API for Brevo (Sendinblue)
   - Built-in dry-run simulator for zero-credential testing
-* **Testing Framework**: `vitest`
+* **Testing Framework**: `tsx` test runner with Vitest-compatible assertions (`src/tests/testSuite.ts`)
 
 ---
 
 ## 📂 Key File Structure
 
 ```
-/workspaces/AllVibesDemo/
-├── AGENTS.md                  # This file
-├── README.md                  # User instructions, GitHub setup, and transfer guide
+/workspaces/saraclassnoteshelper/
+├── AGENTS.md                  # This file - technical architecture and agent guide
+├── README.md                  # User instructions, Docker/devcontainer, and transfer guide
+├── WALKTHROUGH.md             # Functional verification and system walkthrough
 ├── package.json               # Dependencies & scripts
+├── .data/
+│   ├── app_state.json         # Legacy / baseline state
+│   ├── state_sara.json        # Sara's classroom state (auto-created/synced)
+│   └── state_megan.json       # Megan's classroom state (auto-created/synced)
 ├── src/
 │   ├── app/
 │   │   ├── layout.tsx         # Global layout & HTML head metadata
@@ -53,28 +69,29 @@ Welcome! This document provides technical context, architecture guidelines, and 
 │   │   ├── settings/page.tsx  # Configuration Manager (Students, Dropdowns, Emails, Security)
 │   │   ├── preview/page.tsx   # Live Email Preview & Dry-Run Simulator
 │   │   └── api/
-│   │       ├── auth/route.ts  # 30-day passphrase authentication endpoint
-│   │       ├── data/route.ts  # Cross-device synchronization & server storage
-│   │       └── send/route.ts  # Email dispatch API
+│   │       ├── auth/route.ts  # Role-based passcode authentication (sara / megan / admin)
+│   │       ├── data/route.ts  # Per-classroom cloud sync & server storage
+│   │       └── send/route.ts  # Email dispatch API (simulator / gmail / brevo)
 │   ├── components/
-│   │   ├── Navbar.tsx         # Top bar with date, sync status, and navigation
+│   │   ├── Navbar.tsx         # Top bar with date, sync status, and Admin classroom switcher
 │   │   ├── StudentTabs.tsx    # Mobile-friendly student selector pills
 │   │   ├── CategoryDropdown.tsx # Dropdown with default indicator & quick chips
 │   │   ├── NotesSection.tsx   # Notes 1 & 2 with Web Speech voice dictation
 │   │   ├── ActionPanel.tsx    # Send button, Sent status banner, Reset button
 │   │   ├── ConfirmModal.tsx   # Reusable safeguard confirmation popup
-│   │   └── AuthGuard.tsx      # Passphrase gate with 30-day persistence
+│   │   └── AuthGuard.tsx      # Passcode gate with classroom tabs and 30-day persistence
 │   ├── lib/
-│   │   ├── types.ts           # Core TypeScript types & data schemas
-│   │   ├── initialData.ts     # Preconfigured 3 sample students and categories
+│   │   ├── types.ts           # Core TypeScript types (ClassroomId, UserRole, AppState)
+│   │   ├── initialData.ts     # Preconfigured students & categories for Sara and Megan
 │   │   ├── emailFormatter.ts  # Plain-text email generator with date stamps
 │   │   ├── emailSender.ts     # Multi-provider email engine
 │   │   ├── speech.ts          # Web Speech API helper
 │   │   └── storage.ts         # Local-first client cache and sync engine
 │   └── tests/
+│       ├── testSuite.ts       # Main test suite (41 assertions covering both classrooms)
 │       ├── emailFormatter.test.ts # Tests for individual & master emails
-│       ├── state.test.ts          # Tests for reset and defaults
-│       └── validation.test.ts     # Tests for email delivery safeguards
+│       ├── state.test.ts      # Tests for reset and defaults
+│       └── validation.test.ts # Tests for email delivery safeguards
 ```
 
 ---
@@ -82,11 +99,8 @@ Welcome! This document provides technical context, architecture guidelines, and 
 ## 🔧 Useful Commands
 
 ```bash
-# Run automated test suite
+# Run automated test suite (41 assertions)
 npm test
-
-# Run tests in watch mode
-npm run test:watch
 
 # Start local development server
 npm run dev
@@ -99,6 +113,7 @@ npm run build
 
 ## 🔒 Security & Data Principles
 
-1. **Passphrase Access**: Authentication is handled via a lightweight passphrase token with a 30-day lifespan in `localStorage`.
+1. **Passcode Access**: Authentication is handled via role-based tokens (`sara`, `megan`, or `admin`) with a 30-day lifespan in `localStorage`.
 2. **Plain-Text Emails**: All student emails are formatted strictly as plain text (no tracking pixels, no complex HTML) to ensure maximum deliverability, readability on all parent devices, and respect for student privacy.
-3. **No Lock-In**: Configuration and student records are stored in a standard portable JSON structure. Deploying to Vercel, Netlify, Render, or transferring to Sara's GitHub account requires no proprietary database migrations.
+3. **Multi-Classroom State Isolation**: State is scoped strictly per classroom (`state_sara.json` vs `state_megan.json`). Actions taken in one classroom (such as resetting for the next day or sending emails) never affect the other classroom.
+4. **No Lock-In**: Configuration and student records are stored in portable JSON structures. Deploying to Vercel, Netlify, Render, or transferring to Sara's or Megan's GitHub account requires no proprietary database migrations.

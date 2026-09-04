@@ -1,28 +1,44 @@
-# ☀️ Sara's Classroom Daily Log & Parent Reporting System
+# ☀️ Classroom Daily Log & Parent Reporting System (Sara & Megan)
 
-A lightweight, mobile-friendly and laptop-friendly daily reporting application built for special education teacher Sara. Designed to make recording daily observations and sending text-only email notes to parents effortless, fast, and 100% free.
+A lightweight, mobile-friendly and laptop-friendly daily reporting application built for special education teachers **Sara** and **Megan**. Designed to make recording daily observations and sending text-only email notes to parents effortless, fast, and 100% free.
 
 ---
 
 ## ✨ Features at a Glance
 
-* **📱 Mobile & Laptop Ready**: Touch-friendly interface with large buttons and clean contrast.
+* **🏫 Multi-Classroom Support**: Independent dashboards, student rosters, and categories for both **Sara's Classroom** (severe communication & behavioral needs) and **Megan's Classroom** (academic progress & IEP goals).
+* **📱 Mobile & Laptop Ready**: Touch-friendly interface with large buttons and clean contrast for busy classroom environments.
 * **👦 Fast Student Selector**: Quick tab selector for classroom students with completion badges.
-* **📋 Customizable Categories**: Preconfigured dropdowns for Breakfast, Rest/Nap, Behavior, Therapy, etc., with easy-to-change defaults (like *"No report"*).
-* **📝 Notes 1 & Notes 2 with Voice Dictation**: Two separate notes boxes with built-in voice-to-text dictation using your phone or laptop microphone.
-* **✉️ 1-Click Automated Emails**:
+* **📋 Customizable Categories**:
+  * **Sara**: Breakfast, Rest/Nap, Behavior, Therapy, Lunch Report.
+  * **Megan**: Academic Highlights, Social Participation, Reading Goals, Math Goals, Other IEP Goals, Special Activities.
+  * Easy-to-change defaults (e.g. *"No report"*) and one-tap quick chips.
+* **📝 Notes 1 & Notes 2 with Voice Dictation**: Two separate arbitrary notes boxes with built-in voice-to-text dictation using your phone or laptop microphone.
+* **✉️ 1-Click Automated Plain-Text Emails**:
   * Formatted text-only daily report sent to each student's parents/guardians.
-  * Master consolidated summary report containing all students sent to Sara (and admin/testers).
+  * Master consolidated summary report containing all students sent to teacher (and admin/testers).
 * **🛡️ Safeguards & Warnings**:
-  * **"Are you sure?"** confirmation modal before sending emails.
+  * **"Are you sure?"** confirmation modal before sending emails with a live preview of recipients.
   * **Already Sent Today** status indicator warning against duplicate sends.
   * **"Reset for Next Day"** button (guarded by confirmation) to clear notes and restore defaults.
 * **⚙️ Flexible Free Email Dispatch**:
-  * **Google App Password**: Sends directly from your or Sara's Gmail account.
+  * **Google App Password**: Sends directly from your or the teacher's Gmail account.
   * **Brevo API (Free Tier)**: 300 free emails/day.
   * **Test Simulator Mode**: Zero-setup preview and testing without sending real emails.
 * **🔄 Cross-Device Synchronization**: Make changes on your laptop or phone; state stays synced with snappy 0ms instant local editing.
-* **🔐 30-Day Passcode Persistence**: Simple passcode security that remembers your phone or laptop for 30 days.
+* **🔐 Role-Based Passcodes & 30-Day Persistence**: Dedicated teacher logins and an Admin master mode with 30-day "Remember this device" persistence.
+
+---
+
+## 🔑 Passcodes & Access
+
+| Role / Classroom | Passcode | Access Scope |
+| :--- | :--- | :--- |
+| ☀️ **Sara's Classroom** | `sara2026` | Opens Sara's daily log dashboard directly |
+| 🌸 **Megan's Classroom** | `megan2026` | Opens Megan's daily log dashboard directly |
+| 🛡️ **Admin Master** | `admin2026` | Unlocks both classrooms with on-the-fly switching in the top navigation bar |
+
+*(Passcodes can also be customized at any time in **Settings**).*
 
 ---
 
@@ -37,9 +53,7 @@ npm install
 ```bash
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-* **Default Passcode**: `sara2026` (you can customize this anytime in Settings).
+Open [http://localhost:3000](http://localhost:3000) in your browser and enter one of the passcodes above.
 
 ---
 
@@ -64,35 +78,49 @@ If you are developing on a machine with **Docker Desktop** and **VS Code**:
    * Click **Reopen in Container** (or press `Ctrl+Shift+P` / `Cmd+Shift+P` and choose **Dev Containers: Reopen in Container**).
 
 4. **Automatic Setup**:
-   * Docker will build the container with Node.js LTS, Antigravity CLI (`agy`), and run `npm install` automatically.
-   * Port `3000` is automatically forwarded to `http://localhost:3000`.
-   * Start developing immediately:
+   * Docker builds the container with Node.js LTS, Antigravity CLI (`agy`), and installs dependencies automatically.
+   * Port `3000` is forwarded to `http://localhost:3000`.
+   * Start developing:
      ```bash
      npm run dev
      ```
 
-
 ---
 
-## 🧪 Testing the System (Fake Students Sandbox)
+## 🧪 Testing the Classrooms (Demo Rosters & Sub-Addressing)
 
-The app comes preloaded with **3 sample students**:
-* **Alex T.** (`alex-parent-test@example.com`)
-* **Jordan M.** (`jordan-parent-test@example.com`)
-* **Sam K.** (`sam-parent-test@example.com`)
+Each classroom comes pre-loaded with demo students configured with **Gmail sub-addressing** (`+tag`) so all test reports route safely to a single inbox during testing without bothering real parents.
+
+### ☀️ Sara's Demo Classroom
+* **Passcode**: `sara2026`
+* **Students**:
+  * **Alex T.** (`mauldinjeff+sara-alex@gmail.com`)
+  * **Jordan M.** (`mauldinjeff+sara-jordan@gmail.com`)
+  * **Sam K.** (`mauldinjeff+sara-sam@gmail.com`)
+* **Master Summary**: `mauldinjeff+sara-master@gmail.com`
+
+### 🌸 Megan's Demo Classroom
+* **Passcode**: `megan2026`
+* **Students**:
+  * **Maya L.** (`mauldinjeff+megan-maya@gmail.com`)
+  * **Lucas R.** (`mauldinjeff+megan-lucas@gmail.com`)
+  * **Emma W.** (`mauldinjeff+megan-emma@gmail.com`)
+* **Master Summary**: `mauldinjeff+megan-master@gmail.com`
 
 ### How to test:
-1. Open the app and log in with passcode `sara2026`.
+1. Open the app and log in with passcode `admin2026` (or `sara2026` / `megan2026`).
 2. Make some changes to the dropdowns, click **Voice Dictate** (or type) in **Notes 1** and **Notes 2**.
 3. Click **"Email Preview"** in the top navigation bar to see the exact text emails generated for parents and the master summary.
 4. Click **"Run Dry-Run Test"** to simulate the complete email dispatch flow.
-5. Go back to the dashboard, click **"Send All Email Reports"** to test the confirmation guard and sent status indicators.
-6. Test **"Reset for Next Day"** to verify that dropdowns revert to default and notes clear.
+5. On the dashboard, click **"Send All Email Reports"** to test the confirmation guard and sent status indicators.
+6. Test **"Reset for Next Day"** to verify that dropdowns revert to defaults and notes clear.
+7. Switch between classrooms from the navbar dropdown if logged in as Admin.
 
-### Running Automated Unit Tests
+### Running Automated Tests
 ```bash
 npm test
 ```
+Runs 41 automated assertions covering email generation, multi-classroom state isolation, and safeguard validation.
 
 ---
 
@@ -102,13 +130,13 @@ When you are ready to send live emails:
 
 ### Option A: Using Gmail with Google App Password (Recommended)
 1. Log into your Google Account and visit [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords).
-2. Enter "Sara Daily Reports" as the app name and click **Create**.
+2. Enter a name like "Class Daily Reports" and click **Create**.
 3. Google will display a 16-letter password (e.g. `abcd efgh ijkl mnop`).
 4. In the app, go to **Settings** → **Email Delivery Setup**:
    * Select **✉️ Gmail (App Password)**.
    * Enter your Gmail address and paste the 16-letter password.
    * Click **Save Changes**.
-5. *Tip: You can test with your own Gmail first, and later switch it to Sara's Gmail!*
+5. *Tip: You can test with your own Gmail first, and later switch it to Sara's or Megan's Gmail!*
 
 ### Option B: Using Brevo (Free 300 emails/day)
 1. Sign up for a free account at [brevo.com](https://www.brevo.com).
@@ -117,7 +145,7 @@ When you are ready to send live emails:
 
 ---
 
-## 🚢 Free Hosting & Transferring to Sara's GitHub
+## 🚢 Free Hosting & Transferring to Sara or Megan
 
 This app is built with standard Next.js and has zero proprietary database locks.
 
@@ -126,10 +154,8 @@ This app is built with standard Next.js and has zero proprietary database locks.
 2. Go to [vercel.com](https://vercel.com) (or Cloudflare Pages), sign in with GitHub, and click **Add New Project**.
 3. Select this repository and click **Deploy** (100% free tier).
 
-### Transferring to Sara's GitHub Account
-* Whenever you're ready, you can either:
-  1. Transfer the GitHub repository directly to Sara's GitHub account via GitHub repository settings (**Settings** → **Danger Zone** → **Transfer ownership**).
-  2. Or have Sara fork/clone the repo and deploy it to her own free Vercel account.
+### Transferring Ownership
+* When ready, you can transfer the GitHub repository directly to Sara or Megan via repository settings (**Settings** → **Danger Zone** → **Transfer ownership**), or have them fork/clone and deploy to their own free hosting account.
 
 ---
 
