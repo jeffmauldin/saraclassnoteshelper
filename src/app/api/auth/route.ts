@@ -19,22 +19,29 @@ async function getCustomPassphrase(classroomId: ClassroomId): Promise<string | n
     }
   }
 
-  // 2. Fall back to local disk
-  const filePath = path.join(DATA_DIR, `state_${classroomId}.json`);
-  const legacyFile = path.join(DATA_DIR, "app_state.json");
+  // 2. Fall back to local disk (/tmp/.data on Vercel, or process.cwd()/.data)
+  const candidateDirs = [
+    process.env.VERCEL ? path.join("/tmp", ".data") : null,
+    path.join(process.cwd(), ".data"),
+  ].filter(Boolean) as string[];
 
-  try {
-    if (fs.existsSync(filePath)) {
-      const content = fs.readFileSync(filePath, "utf-8");
-      const parsed = JSON.parse(content);
-      if (parsed?.settings?.passphrase) return parsed.settings.passphrase;
-    } else if (classroomId === "sara" && fs.existsSync(legacyFile)) {
-      const content = fs.readFileSync(legacyFile, "utf-8");
-      const parsed = JSON.parse(content);
-      if (parsed?.settings?.passphrase) return parsed.settings.passphrase;
+  for (const dir of candidateDirs) {
+    try {
+      const filePath = path.join(dir, `state_${classroomId}.json`);
+      const legacyFile = path.join(dir, "app_state.json");
+
+      if (fs.existsSync(filePath)) {
+        const content = fs.readFileSync(filePath, "utf-8");
+        const parsed = JSON.parse(content);
+        if (parsed?.settings?.passphrase) return parsed.settings.passphrase;
+      } else if (classroomId === "sara" && fs.existsSync(legacyFile)) {
+        const content = fs.readFileSync(legacyFile, "utf-8");
+        const parsed = JSON.parse(content);
+        if (parsed?.settings?.passphrase) return parsed.settings.passphrase;
+      }
+    } catch (e) {
+      console.warn(`Could not read disk passphrase for ${classroomId}:`, e);
     }
-  } catch (e) {
-    console.warn(`Could not read disk passphrase for ${classroomId}:`, e);
   }
   return null;
 }

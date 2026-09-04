@@ -69,7 +69,11 @@ export function saveLocalState(state: AppState, classroomId?: ClassroomId): void
   if (typeof window === "undefined") return;
   const cid: ClassroomId = classroomId || state.classroomId || getActiveClassroomId();
   try {
-    const toSave = { ...state, classroomId: cid };
+    const toSave: AppState = {
+      ...state,
+      classroomId: cid,
+      updatedAt: state.updatedAt || Date.now(),
+    };
     localStorage.setItem(getClassroomStateKey(cid), JSON.stringify(toSave));
     if (cid === "sara") {
       localStorage.setItem(LEGACY_SARA_STATE_KEY, JSON.stringify(toSave));
@@ -82,13 +86,55 @@ export function saveLocalState(state: AppState, classroomId?: ClassroomId): void
 export async function fetchServerState(classroomId?: ClassroomId): Promise<AppState | null> {
   const cid: ClassroomId = classroomId || getActiveClassroomId();
   try {
-    const res = await fetch(`/api/data?classroom=${cid}`);
+    const res = await fetch(`/api/data?classroom=${cid}`, { cache: "no-store" });
     if (!res.ok) return null;
     const data = await res.json();
-    if (data && data.state) {
-      saveLocalState(data.state, cid);
-      return data.state;
+
+    const localState = loadLocalState(cid);
+
+    // If server has never saved data for this classroom (hasSavedState: false),
+    // NEVER overwrite local state! Instead, seed the server with our local data.
+    if (!data || !data.hasSavedState || !data.state) {
+      if (localState) {
+        syncStateToServer(localState, cid);
+      }
+      return localState;
     }
+
+    const serverState = data.state as AppState;
+    const serverTime = serverState.updatedAt || 0;
+    const localTime = localState.updatedAt || 0;
+
+    // Check if local state has actual user edits (notes or non-default selections)
+    const localHasEdits = Object.values(localState.entries || {}).some(
+      (e) => (e.notes1 && e.notes1.trim().length > 0) || (e.notes2 && e.notes2.trim().length > 0)
+    );
+    const serverHasEdits = Object.values(serverState.entries || {}).some(
+      (e) => (e.notes1 && e.notes1.trim().length > 0) || (e.notes2 && e.notes2.trim().length > 0)
+    );
+
+    // Conflict resolution:
+    // 1. If server timestamp is strictly newer, server wins
+    if (serverTime > localTime) {
+      saveLocalState(serverState, cid);
+      return serverState;
+    }
+
+    // 2. If timestamps are equal (or both 0), but local has edits and server is empty, local wins
+    if (serverTime === localTime && localHasEdits && !serverHasEdits) {
+      syncStateToServer(localState, cid);
+      return localState;
+    }
+
+    // 3. If local timestamp is newer, local wins and updates server
+    if (localTime > serverTime) {
+      syncStateToServer(localState, cid);
+      return localState;
+    }
+
+    // Default: accept server state
+    saveLocalState(serverState, cid);
+    return serverState;
   } catch (e) {
     console.warn(`Could not sync with server for ${cid}, using local data:`, e);
   }
@@ -97,7 +143,11 @@ export async function fetchServerState(classroomId?: ClassroomId): Promise<AppSt
 
 export async function syncStateToServer(state: AppState, classroomId?: ClassroomId): Promise<boolean> {
   const cid: ClassroomId = classroomId || state.classroomId || getActiveClassroomId();
-  const toSync = { ...state, classroomId: cid };
+  const toSync: AppState = {
+    ...state,
+    classroomId: cid,
+    updatedAt: state.updatedAt || Date.now(),
+  };
   saveLocalState(toSync, cid);
   try {
     const res = await fetch(`/api/data?classroom=${cid}`, {

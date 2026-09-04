@@ -5,43 +5,32 @@ import { getInitialStateForClassroom } from "@/lib/initialData";
 import { AppState, ClassroomId } from "@/lib/types";
 import { getCloudState, isCloudStorageConfigured, setCloudState } from "@/lib/cloudStorage";
 
-const DATA_DIR = path.join(process.cwd(), ".data");
-
 function normalizeClassroomId(id: string | null): ClassroomId {
   return id === "megan" ? "megan" : "sara";
 }
 
-function getClassroomFilePath(classroomId: ClassroomId): string {
-  return path.join(DATA_DIR, `state_${classroomId}.json`);
+function getDataDir(): string {
+  // On Vercel / serverless, process.cwd() is read-only (/var/task). Use /tmp instead.
+  if (process.env.VERCEL) {
+    return path.join("/tmp", ".data");
+  }
+  return path.join(process.cwd(), ".data");
 }
 
-function readDiskState(classroomId: ClassroomId): AppState {
+function getClassroomFilePath(classroomId: ClassroomId): string {
+  return path.join(getDataDir(), `state_${classroomId}.json`);
+}
+
+function readDiskState(classroomId: ClassroomId): AppState | null {
   const initial = getInitialStateForClassroom(classroomId);
-  const filePath = getClassroomFilePath(classroomId);
-  const legacyPath = path.join(DATA_DIR, "app_state.json");
+  const primaryPath = getClassroomFilePath(classroomId);
+  const repoPath = path.join(process.cwd(), ".data", `state_${classroomId}.json`);
+  const legacyRepoPath = path.join(process.cwd(), ".data", "app_state.json");
 
   try {
-    // Migration: If loading sara and state_sara doesn't exist, check legacy app_state.json
-    if (!fs.existsSync(filePath) && classroomId === "sara" && fs.existsSync(legacyPath)) {
-      try {
-        const legacyContent = fs.readFileSync(legacyPath, "utf-8");
-        if (legacyContent.trim()) {
-          const parsed = JSON.parse(legacyContent);
-          const migrated: AppState = {
-            ...initial,
-            ...parsed,
-            classroomId: "sara",
-          };
-          writeDiskState(migrated, "sara");
-          return migrated;
-        }
-      } catch (migErr) {
-        console.warn("Could not migrate legacy app_state.json:", migErr);
-      }
-    }
-
-    if (fs.existsSync(filePath)) {
-      const content = fs.readFileSync(filePath, "utf-8");
+    // 1. Check writable data directory first (e.g. /tmp/.data on Vercel)
+    if (fs.existsSync(primaryPath)) {
+      const content = fs.readFileSync(primaryPath, "utf-8");
       if (content.trim()) {
         const parsed = JSON.parse(content);
         return {
@@ -59,75 +48,141 @@ function readDiskState(classroomId: ClassroomId): AppState {
         };
       }
     }
+
+    // 2. Check bundled repo file
+    if (fs.existsSync(repoPath)) {
+      const content = fs.readFileSync(repoPath, "utf-8");
+      if (content.trim()) {
+        const parsed = JSON.parse(content);
+        return {
+          ...initial,
+          ...parsed,
+          classroomId,
+          settings: {
+            ...initial.settings,
+            ...(parsed.settings || {}),
+            emailSettings: {
+              ...initial.settings.emailSettings,
+              ...(parsed.settings?.emailSettings || {}),
+            },
+          },
+        };
+      }
+    }
+
+    // 3. Check legacy app_state.json for Sara
+    if (classroomId === "sara" && fs.existsSync(legacyRepoPath)) {
+      const content = fs.readFileSync(legacyRepoPath, "utf-8");
+      if (content.trim()) {
+        const parsed = JSON.parse(content);
+        return {
+          ...initial,
+          ...parsed,
+          classroomId: "sara",
+          settings: {
+            ...initial.settings,
+            ...(parsed.settings || {}),
+            emailSettings: {
+              ...initial.settings.emailSettings,
+              ...(parsed.settings?.emailSettings || {}),
+            },
+          },
+        };
+      }
+    }
   } catch (e) {
-    console.error(`Error reading disk data for ${classroomId}, using defaults:`, e);
+    console.error(`Error reading disk data for ${classroomId}:`, e);
   }
-  return initial;
+
+  return null;
 }
 
 function writeDiskState(state: AppState, classroomId: ClassroomId): void {
   try {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
+    const dir = getDataDir();
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
     }
     const filePath = getClassroomFilePath(classroomId);
-    const toWrite: AppState = { ...state, classroomId };
+    const toWrite: AppState = {
+      ...state,
+      classroomId,
+      updatedAt: state.updatedAt || Date.now(),
+    };
     fs.writeFileSync(filePath, JSON.stringify(toWrite, null, 2), "utf-8");
   } catch (e) {
-    // On serverless environments (e.g. Vercel), disk is read-only
-    console.warn(`Disk write skipped or unavailable for ${classroomId} (expected in serverless):`, e);
+    console.warn(`Disk write skipped for ${classroomId}:`, e);
   }
 }
 
-async function readSavedState(classroomId: ClassroomId): Promise<AppState> {
+async function readSavedState(
+  classroomId: ClassroomId
+): Promise<{ state: AppState | null; hasSavedState: boolean }> {
   const initial = getInitialStateForClassroom(classroomId);
 
   if (isCloudStorageConfigured()) {
     const cloudState = await getCloudState(classroomId);
     if (cloudState) {
       return {
-        ...initial,
-        ...cloudState,
-        classroomId,
-        settings: {
-          ...initial.settings,
-          ...(cloudState.settings || {}),
-          emailSettings: {
-            ...initial.settings.emailSettings,
-            ...(cloudState.settings?.emailSettings || {}),
+        state: {
+          ...initial,
+          ...cloudState,
+          classroomId,
+          settings: {
+            ...initial.settings,
+            ...(cloudState.settings || {}),
+            emailSettings: {
+              ...initial.settings.emailSettings,
+              ...(cloudState.settings?.emailSettings || {}),
+            },
           },
         },
+        hasSavedState: true,
       };
     }
 
-    // If not in cloud yet, seed with disk state or initial state
+    // Seed cloud from disk if available
     const diskFallback = readDiskState(classroomId);
-    await setCloudState(diskFallback, classroomId);
-    return diskFallback;
+    if (diskFallback) {
+      await setCloudState(diskFallback, classroomId);
+      return { state: diskFallback, hasSavedState: true };
+    }
+
+    return { state: null, hasSavedState: false };
   }
 
-  return readDiskState(classroomId);
+  const diskState = readDiskState(classroomId);
+  if (diskState) {
+    return { state: diskState, hasSavedState: true };
+  }
+
+  return { state: null, hasSavedState: false };
 }
 
 async function writeSavedState(state: AppState, classroomId: ClassroomId): Promise<void> {
-  const toWrite: AppState = { ...state, classroomId };
+  const toWrite: AppState = {
+    ...state,
+    classroomId,
+    updatedAt: state.updatedAt || Date.now(),
+  };
 
   if (isCloudStorageConfigured()) {
     await setCloudState(toWrite, classroomId);
   }
 
-  // Always attempt disk write as secondary backup (will silently warn if serverless read-only)
   writeDiskState(toWrite, classroomId);
 }
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const classroomId = normalizeClassroomId(searchParams.get("classroom"));
-  const state = await readSavedState(classroomId);
+  const { state, hasSavedState } = await readSavedState(classroomId);
   const cloudActive = isCloudStorageConfigured();
+  const fallbackState = getInitialStateForClassroom(classroomId);
 
   return NextResponse.json({
-    state,
+    state: state || fallbackState,
+    hasSavedState,
     storage: {
       mode: cloudActive ? "cloud" : "local",
       cloudConfigured: cloudActive,
@@ -145,12 +200,17 @@ export async function POST(req: NextRequest) {
     const classroomId = normalizeClassroomId(
       body.state.classroomId || searchParams.get("classroom")
     );
-    await writeSavedState(body.state, classroomId);
+    const toSave: AppState = {
+      ...body.state,
+      classroomId,
+      updatedAt: body.state.updatedAt || Date.now(),
+    };
+    await writeSavedState(toSave, classroomId);
     const cloudActive = isCloudStorageConfigured();
 
     return NextResponse.json({
       success: true,
-      state: body.state,
+      state: toSave,
       storage: {
         mode: cloudActive ? "cloud" : "local",
         cloudConfigured: cloudActive,

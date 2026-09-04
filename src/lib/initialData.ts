@@ -235,6 +235,7 @@ export function getInitialStateForClassroom(classroomId: ClassroomId): AppState 
     currentDate: getTodayDateString(),
     sentDate: null,
     lastResetDate: getTodayDateString(),
+    updatedAt: 0,
     settings: {
       passphrase: profile.defaultPasscode,
       emailSettings: {

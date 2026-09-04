@@ -70,6 +70,7 @@ export interface AppState {
   sentDate: string | null; // Date when emails were last sent
   lastResetDate: string | null;
   settings: AppSettings;
+  updatedAt?: number; // Epoch timestamp (ms) for conflict resolution
 }
 
 export interface SendResult {

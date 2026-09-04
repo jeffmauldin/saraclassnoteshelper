@@ -56,7 +56,10 @@ function SettingsContent() {
   }, [activeClassroomId]);
 
   const handleSaveAll = async (overrideState?: AppState) => {
-    const toSave = overrideState || state;
+    const toSave: AppState = {
+      ...(overrideState || state),
+      updatedAt: Date.now(),
+    };
     setSaveStatus("Saving...");
     saveLocalState(toSave, activeClassroomId);
     const ok = await syncStateToServer(toSave, activeClassroomId);

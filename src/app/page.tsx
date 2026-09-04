@@ -33,7 +33,12 @@ export default function DailyDashboardPage() {
 
 function DailyDashboardContent() {
   const { session, activeClassroomId, switchClassroom, logout } = useSession();
-  const [state, setState] = useState<AppState>(() => getInitialStateForClassroom(activeClassroomId));
+  const [state, setState] = useState<AppState>(() => {
+    if (typeof window !== "undefined") {
+      return loadLocalState(activeClassroomId);
+    }
+    return getInitialStateForClassroom(activeClassroomId);
+  });
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [syncStatus, setSyncStatus] = useState<"saved" | "unsaved" | "syncing" | "error">("saved");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -63,7 +68,9 @@ function DailyDashboardContent() {
     };
     setState(initialState);
     if (initialState.students.length > 0) {
-      setSelectedStudentId(initialState.students[0].id);
+      setSelectedStudentId((prev) =>
+        initialState.students.some((s) => s.id === prev) ? prev : initialState.students[0].id
+      );
     } else {
       setSelectedStudentId("");
     }
@@ -78,7 +85,9 @@ function DailyDashboardContent() {
             currentDate: today,
           });
           if (serverState.students.length > 0) {
-            setSelectedStudentId(serverState.students[0].id);
+            setSelectedStudentId((prev) =>
+              serverState.students.some((s) => s.id === prev) ? prev : serverState.students[0].id
+            );
           }
           setSyncStatus("saved");
         } else {
@@ -100,9 +109,13 @@ function DailyDashboardContent() {
     (updater: (prev: AppState) => AppState) => {
       setState((prev) => {
         const next = updater(prev);
-        saveLocalState(next, activeClassroomId);
+        const withTimestamp: AppState = {
+          ...next,
+          updatedAt: Date.now(),
+        };
+        saveLocalState(withTimestamp, activeClassroomId);
         setSyncStatus("unsaved");
-        return next;
+        return withTimestamp;
       });
     },
     [activeClassroomId]
@@ -235,6 +248,7 @@ function DailyDashboardContent() {
         const updated = {
           ...state,
           sentDate: state.currentDate,
+          updatedAt: Date.now(),
         };
         setState(updated);
         saveLocalState(updated, activeClassroomId);
@@ -262,6 +276,7 @@ function DailyDashboardContent() {
       entries: defaultEntries,
       sentDate: null,
       lastResetDate: getTodayDateString(),
+      updatedAt: Date.now(),
     };
     setState(updated);
     saveLocalState(updated, activeClassroomId);
