@@ -33,7 +33,11 @@ Welcome! This document provides technical context, architecture guidelines, and 
      - Confirmation modals before sending reports and resetting for the next day.
      - "Already Sent Today" banner to prevent accidental duplicate dispatches.
      - "Reset for Next Day" restoring all dropdowns to default and clearing notes.
-  9. **Zero-Cost Email Sending**: Google App Password SMTP, Brevo API, and Test Simulator Mode.
+  9. **Cross-Device Smart Sync & Conflict Guard**:
+     - Dedicated "Pull from Cloud" button in the navigation header to load updates on demand without page refreshes.
+     - Bandwidth-friendly tab resume auto-check (`visibilitychange` / focus) throttled to 60+ seconds (zero battery-draining polling).
+     - Local draft conflict protection via `ConflictModal`: incoming updates never silently overwrite un-synced notes.
+  10. **Zero-Cost Email Sending**: Google App Password SMTP, Brevo API, and Test Simulator Mode.
 
 ---
 
@@ -73,12 +77,13 @@ Welcome! This document provides technical context, architecture guidelines, and 
 │   │       ├── data/route.ts  # Per-classroom cloud sync & server storage
 │   │       └── send/route.ts  # Email dispatch API (simulator / gmail / brevo)
 │   ├── components/
-│   │   ├── Navbar.tsx         # Top bar with date, sync status, and Admin classroom switcher
+│   │   ├── Navbar.tsx         # Top bar with date, sync status, Pull Cloud button, and Admin classroom switcher
 │   │   ├── StudentTabs.tsx    # Mobile-friendly student selector pills
 │   │   ├── CategoryDropdown.tsx # Dropdown with default indicator & quick chips
 │   │   ├── NotesSection.tsx   # Notes 1 & 2 with Web Speech voice dictation
 │   │   ├── ActionPanel.tsx    # Send button, Sent status banner, Reset button
 │   │   ├── ConfirmModal.tsx   # Reusable safeguard confirmation popup
+│   │   ├── ConflictModal.tsx  # Cross-device sync conflict resolution modal
 │   │   └── AuthGuard.tsx      # Passcode gate with classroom tabs and 30-day persistence
 │   ├── lib/
 │   │   ├── types.ts           # Core TypeScript types (ClassroomId, UserRole, AppState)
@@ -89,7 +94,7 @@ Welcome! This document provides technical context, architecture guidelines, and 
 │   │   ├── speech.ts          # Web Speech API helper
 │   │   └── storage.ts         # Local-first client cache and sync engine
 │   └── tests/
-│       ├── testSuite.ts       # Main test suite (44 assertions covering classrooms & cloud storage)
+│       ├── testSuite.ts       # Main test suite (53 assertions covering classrooms, sync & cloud storage)
 │       ├── emailFormatter.test.ts # Tests for individual & master emails
 │       ├── state.test.ts      # Tests for reset and defaults
 │       └── validation.test.ts # Tests for email delivery safeguards
@@ -100,7 +105,7 @@ Welcome! This document provides technical context, architecture guidelines, and 
 ## 🔧 Useful Commands
 
 ```bash
-# Run automated test suite (44 assertions)
+# Run automated test suite (53 assertions)
 npm test
 
 # Start local development server

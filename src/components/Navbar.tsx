@@ -8,6 +8,7 @@ import { ClassroomId, UserRole } from "@/lib/types";
 import {
   Cloud,
   CloudOff,
+  DownloadCloud,
   RefreshCw,
   Settings,
   Eye,
@@ -21,6 +22,8 @@ interface NavbarProps {
   currentDate: string;
   syncStatus: "saved" | "unsaved" | "syncing" | "error";
   onManualSync: () => void;
+  onPullCloud?: () => void;
+  isPulling?: boolean;
   onLogout: () => void;
   classroomId?: ClassroomId;
   userRole?: UserRole;
@@ -31,6 +34,8 @@ export function Navbar({
   currentDate,
   syncStatus,
   onManualSync,
+  onPullCloud,
+  isPulling = false,
   onLogout,
   classroomId = "sara",
   userRole = "teacher",
@@ -132,7 +137,7 @@ export function Navbar({
 
         {/* Right: Sync Status & Navigation Links */}
         <div className="flex items-center space-x-2">
-          {/* Sync Button & Status */}
+          {/* Sync Button & Status (Push) */}
           <button
             onClick={onManualSync}
             title="Click to sync data with cloud/other devices"
@@ -157,6 +162,25 @@ export function Navbar({
               {syncStatus === "error" && "Sync Error"}
             </span>
           </button>
+
+          {/* Pull Cloud Button */}
+          {onPullCloud && (
+            <button
+              onClick={onPullCloud}
+              disabled={isPulling}
+              title="Pull latest notes from cloud / other devices"
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isPulling ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin text-sky-600" />
+              ) : (
+                <DownloadCloud className="w-3.5 h-3.5 text-sky-600" />
+              )}
+              <span className="hidden sm:inline">
+                {isPulling ? "Pulling..." : "Pull Cloud"}
+              </span>
+            </button>
+          )}
 
           {/* Email Preview */}
           <Link

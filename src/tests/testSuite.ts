@@ -238,6 +238,131 @@ async function run() {
     assert(false, `Cloud storage detection test error: ${e.message}`);
   }
 
+  // TEST 9: Cross-Device Smart Sync & Pull from Cloud
+  try {
+    const {
+      pullServerState,
+      saveLocalState,
+      loadLocalState,
+      setLastSyncedTimestamp,
+      clearMemoryStorage,
+    } = await import("../lib/storage");
+
+    const originalFetch = global.fetch;
+
+    // Subtest 9.1: Server returns offline/error
+    global.fetch = (async () => ({
+      ok: false,
+      status: 500,
+      json: async () => ({}),
+    })) as any;
+
+    const offlineResult = await pullServerState("sara");
+    assert(offlineResult.status === "offline", "pullServerState returns 'offline' when server errors");
+
+    // Subtest 9.2: Server has no state saved yet
+    global.fetch = (async () => ({
+      ok: true,
+      json: async () => ({ hasSavedState: false }),
+    })) as any;
+
+    const emptyResult = await pullServerState("sara");
+    assert(emptyResult.status === "server_empty", "pullServerState returns 'server_empty' when no cloud state exists");
+
+    // Subtest 9.3: Server is up to date (identical timestamp or entries)
+    clearMemoryStorage();
+    const baseState = getInitialStateForClassroom("sara");
+    baseState.updatedAt = 1000;
+    saveLocalState(baseState, "sara");
+    setLastSyncedTimestamp("sara", 1000);
+
+    global.fetch = (async () => ({
+      ok: true,
+      json: async () => ({
+        hasSavedState: true,
+        state: { ...baseState, updatedAt: 1000 },
+      }),
+    })) as any;
+
+    const upToDateResult = await pullServerState("sara");
+    assert(upToDateResult.status === "up_to_date", "pullServerState recognizes when local is already up to date");
+
+    // Subtest 9.4: Cloud has newer notes from other device (e.g. phone) and local is clean
+    const newerServerState = {
+      ...baseState,
+      updatedAt: 2000,
+      entries: {
+        ...baseState.entries,
+        "student-1": {
+          ...baseState.entries["student-1"],
+          notes1: "Typed on phone during morning circle",
+        },
+      },
+    };
+
+    global.fetch = (async () => ({
+      ok: true,
+      json: async () => ({
+        hasSavedState: true,
+        state: newerServerState,
+      }),
+    })) as any;
+
+    const updatedResult = await pullServerState("sara");
+    assert(updatedResult.status === "updated", "pullServerState cleanly pulls newer cloud updates when local has no unsaved edits");
+    assert(
+      loadLocalState("sara").entries["student-1"].notes1 === "Typed on phone during morning circle",
+      "Local state was updated with cloud notes"
+    );
+
+    // Subtest 9.5: Conflict prevention - local has unsaved notes draft
+    const draftLocalState = loadLocalState("sara");
+    draftLocalState.entries["student-1"].notes2 = "Unsaved draft typed on classroom laptop";
+    draftLocalState.updatedAt = 3000;
+    saveLocalState(draftLocalState, "sara");
+
+    const newerPhoneState = {
+      ...draftLocalState,
+      updatedAt: 4000,
+      entries: {
+        ...draftLocalState.entries,
+        "student-1": {
+          ...draftLocalState.entries["student-1"],
+          notes1: "Phone update 2",
+          notes2: "", // Phone doesn't have laptop draft
+        },
+      },
+    };
+
+    global.fetch = (async () => ({
+      ok: true,
+      json: async () => ({
+        hasSavedState: true,
+        state: newerPhoneState,
+      }),
+    })) as any;
+
+    const conflictResult = await pullServerState("sara");
+    assert(conflictResult.status === "conflict_unsaved", "pullServerState detects conflict and does not overwrite unsaved local drafts");
+    assert(
+      loadLocalState("sara").entries["student-1"].notes2 === "Unsaved draft typed on classroom laptop",
+      "Local draft was safeguarded against loss"
+    );
+
+    // Subtest 9.6: User explicitly confirms force overwrite ("Pull Cloud Notes")
+    const forceResult = await pullServerState("sara", { force: true });
+    assert(forceResult.status === "updated", "Force pull cleanly overwrites when user explicitly confirms");
+    assert(
+      loadLocalState("sara").entries["student-1"].notes1 === "Phone update 2",
+      "Cloud state accepted upon explicit user confirmation"
+    );
+
+    // Restore fetch
+    global.fetch = originalFetch;
+  } catch (e: any) {
+    assert(false, `Cross-device sync test error: ${e.message}`);
+  }
+
   console.log("\n========================================================");
   console.log(` 📊 FINAL RESULTS: ${passed} PASSED, ${failed} FAILED`);
   console.log("========================================================\n");

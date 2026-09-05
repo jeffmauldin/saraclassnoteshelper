@@ -6,10 +6,45 @@ const AUTH_TOKEN_KEY = "classnotes_auth_session_v2";
 const LEGACY_AUTH_TOKEN_KEY = "sara_reports_auth_token_v1";
 const LEGACY_SARA_STATE_KEY = "sara_reports_state_v1";
 
-export function getActiveClassroomId(): ClassroomId {
-  if (typeof window === "undefined") return "sara";
+// Memory storage fallback for SSR or testing environments where window is not defined
+let memoryStore: Record<string, string> = {};
+
+export function clearMemoryStorage(): void {
+  memoryStore = {};
+}
+
+function getStorageItem(key: string): string | null {
   try {
-    const active = localStorage.getItem(ACTIVE_CLASSROOM_KEY);
+    if (typeof localStorage !== "undefined") {
+      return localStorage.getItem(key);
+    }
+  } catch {}
+  return memoryStore[key] || null;
+}
+
+function setStorageItem(key: string, value: string): void {
+  try {
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem(key, value);
+      return;
+    }
+  } catch {}
+  memoryStore[key] = value;
+}
+
+function removeStorageItem(key: string): void {
+  try {
+    if (typeof localStorage !== "undefined") {
+      localStorage.removeItem(key);
+      return;
+    }
+  } catch {}
+  delete memoryStore[key];
+}
+
+export function getActiveClassroomId(): ClassroomId {
+  try {
+    const active = getStorageItem(ACTIVE_CLASSROOM_KEY);
     if (active === "megan") return "megan";
     return "sara";
   } catch {
@@ -18,9 +53,8 @@ export function getActiveClassroomId(): ClassroomId {
 }
 
 export function setActiveClassroomId(id: ClassroomId): void {
-  if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(ACTIVE_CLASSROOM_KEY, id);
+    setStorageItem(ACTIVE_CLASSROOM_KEY, id);
   } catch (e) {
     console.error("Failed to set active classroom:", e);
   }
@@ -30,18 +64,36 @@ function getClassroomStateKey(classroomId: ClassroomId): string {
   return `classnotes_state_${classroomId}_v1`;
 }
 
+function getLastSyncedKey(classroomId: ClassroomId): string {
+  return `classnotes_last_synced_${classroomId}_v1`;
+}
+
+export function getLastSyncedTimestamp(classroomId: ClassroomId): number {
+  try {
+    const raw = getStorageItem(getLastSyncedKey(classroomId));
+    return raw ? parseInt(raw, 10) || 0 : 0;
+  } catch {
+    return 0;
+  }
+}
+
+export function setLastSyncedTimestamp(classroomId: ClassroomId, timestamp: number): void {
+  try {
+    setStorageItem(getLastSyncedKey(classroomId), String(timestamp));
+  } catch (e) {
+    console.error("Failed to set last synced timestamp:", e);
+  }
+}
+
 export function loadLocalState(classroomId?: ClassroomId): AppState {
   const cid: ClassroomId = classroomId || getActiveClassroomId();
   const baseInitial = getInitialStateForClassroom(cid);
 
-  if (typeof window === "undefined") {
-    return baseInitial;
-  }
   try {
-    let raw = localStorage.getItem(getClassroomStateKey(cid));
+    let raw = getStorageItem(getClassroomStateKey(cid));
     // Migration fallback for Sara
     if (!raw && cid === "sara") {
-      raw = localStorage.getItem(LEGACY_SARA_STATE_KEY);
+      raw = getStorageItem(LEGACY_SARA_STATE_KEY);
     }
 
     if (!raw) return baseInitial;
@@ -66,7 +118,6 @@ export function loadLocalState(classroomId?: ClassroomId): AppState {
 }
 
 export function saveLocalState(state: AppState, classroomId?: ClassroomId): void {
-  if (typeof window === "undefined") return;
   const cid: ClassroomId = classroomId || state.classroomId || getActiveClassroomId();
   try {
     const toSave: AppState = {
@@ -74,9 +125,10 @@ export function saveLocalState(state: AppState, classroomId?: ClassroomId): void
       classroomId: cid,
       updatedAt: state.updatedAt || Date.now(),
     };
-    localStorage.setItem(getClassroomStateKey(cid), JSON.stringify(toSave));
+    const serialized = JSON.stringify(toSave);
+    setStorageItem(getClassroomStateKey(cid), serialized);
     if (cid === "sara") {
-      localStorage.setItem(LEGACY_SARA_STATE_KEY, JSON.stringify(toSave));
+      setStorageItem(LEGACY_SARA_STATE_KEY, serialized);
     }
   } catch (e) {
     console.error(`Failed to save local state for ${cid}:`, e);
@@ -97,6 +149,7 @@ export async function fetchServerState(classroomId?: ClassroomId): Promise<AppSt
     if (!data || !data.hasSavedState || !data.state) {
       if (localState) {
         syncStateToServer(localState, cid);
+        setLastSyncedTimestamp(cid, localState.updatedAt || Date.now());
       }
       return localState;
     }
@@ -117,23 +170,27 @@ export async function fetchServerState(classroomId?: ClassroomId): Promise<AppSt
     // 1. If server timestamp is strictly newer, server wins
     if (serverTime > localTime) {
       saveLocalState(serverState, cid);
+      setLastSyncedTimestamp(cid, serverTime);
       return serverState;
     }
 
     // 2. If timestamps are equal (or both 0), but local has edits and server is empty, local wins
     if (serverTime === localTime && localHasEdits && !serverHasEdits) {
       syncStateToServer(localState, cid);
+      setLastSyncedTimestamp(cid, localTime);
       return localState;
     }
 
     // 3. If local timestamp is newer, local wins and updates server
     if (localTime > serverTime) {
       syncStateToServer(localState, cid);
+      setLastSyncedTimestamp(cid, localTime);
       return localState;
     }
 
     // Default: accept server state
     saveLocalState(serverState, cid);
+    setLastSyncedTimestamp(cid, serverTime);
     return serverState;
   } catch (e) {
     console.warn(`Could not sync with server for ${cid}, using local data:`, e);
@@ -155,28 +212,130 @@ export async function syncStateToServer(state: AppState, classroomId?: Classroom
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ state: toSync }),
     });
-    return res.ok;
+    if (res.ok) {
+      setLastSyncedTimestamp(cid, toSync.updatedAt || Date.now());
+      return true;
+    }
+    return false;
   } catch (e) {
     console.warn(`Server sync failed for ${cid} (offline or network error):`, e);
     return false;
   }
 }
 
+export interface PullResult {
+  status: "updated" | "up_to_date" | "conflict_unsaved" | "server_empty" | "offline";
+  serverState?: AppState;
+  message: string;
+}
+
+export interface PullOptions {
+  force?: boolean;
+  hasLocalUnsaved?: boolean;
+}
+
+export async function pullServerState(
+  classroomId?: ClassroomId,
+  options?: PullOptions
+): Promise<PullResult> {
+  const cid: ClassroomId = classroomId || getActiveClassroomId();
+  try {
+    const res = await fetch(`/api/data?classroom=${cid}`, { cache: "no-store" });
+    if (!res.ok) {
+      return {
+        status: "offline",
+        message: "Could not reach the server to check for updates.",
+      };
+    }
+    const data = await res.json();
+    if (!data || !data.hasSavedState || !data.state) {
+      return {
+        status: "server_empty",
+        message: "No cloud data found for this classroom yet.",
+      };
+    }
+
+    const serverState = data.state as AppState;
+    const localState = loadLocalState(cid);
+    const serverTime = serverState.updatedAt || 0;
+    const localTime = localState.updatedAt || 0;
+
+    // If force is specified (user chose "Pull Cloud Notes" to overwrite local draft)
+    if (options?.force) {
+      saveLocalState(serverState, cid);
+      setLastSyncedTimestamp(cid, serverTime);
+      return {
+        status: "updated",
+        serverState,
+        message: "Loaded latest notes from cloud.",
+      };
+    }
+
+    // Check if entries are identical
+    const areEntriesIdentical =
+      JSON.stringify(localState.entries) === JSON.stringify(serverState.entries);
+
+    if (serverTime === localTime || (areEntriesIdentical && serverTime <= localTime)) {
+      return {
+        status: "up_to_date",
+        serverState,
+        message: "Already up to date with cloud.",
+      };
+    }
+
+    // Check for unsaved local edits
+    const lastSynced = getLastSyncedTimestamp(cid);
+    const hasUnsaved =
+      Boolean(options?.hasLocalUnsaved) ||
+      (lastSynced > 0 && localTime > lastSynced) ||
+      (!areEntriesIdentical && localTime > serverTime);
+
+    if (hasUnsaved && !areEntriesIdentical) {
+      return {
+        status: "conflict_unsaved",
+        serverState,
+        message: "You have unsaved local edits on this device, and the cloud has newer notes.",
+      };
+    }
+
+    // Server is newer and local has no unsaved conflicts
+    if (serverTime > localTime || areEntriesIdentical) {
+      saveLocalState(serverState, cid);
+      setLastSyncedTimestamp(cid, serverTime);
+      return {
+        status: "updated",
+        serverState,
+        message: "Updated with latest notes from cloud!",
+      };
+    }
+
+    return {
+      status: "up_to_date",
+      serverState,
+      message: "Already up to date with cloud.",
+    };
+  } catch (e: any) {
+    return {
+      status: "offline",
+      message: e?.message || "Network error while checking cloud.",
+    };
+  }
+}
+
 // 30-day session token helpers
 export function getAuthSession(): AuthSession | null {
-  if (typeof window === "undefined") return null;
   try {
-    const raw = localStorage.getItem(AUTH_TOKEN_KEY);
+    const raw = getStorageItem(AUTH_TOKEN_KEY);
     if (raw) {
       const session: AuthSession = JSON.parse(raw);
       if (session.expiresAt && new Date().getTime() <= session.expiresAt) {
         return session;
       }
-      localStorage.removeItem(AUTH_TOKEN_KEY);
+      removeStorageItem(AUTH_TOKEN_KEY);
     }
 
     // Check legacy token
-    const legacyRaw = localStorage.getItem(LEGACY_AUTH_TOKEN_KEY);
+    const legacyRaw = getStorageItem(LEGACY_AUTH_TOKEN_KEY);
     if (legacyRaw) {
       const legacy = JSON.parse(legacyRaw);
       if (legacy.expiresAt && new Date().getTime() <= legacy.expiresAt) {
@@ -190,7 +349,7 @@ export function getAuthSession(): AuthSession | null {
         saveAuthSession(upgraded.role, upgraded.classroomId);
         return upgraded;
       }
-      localStorage.removeItem(LEGACY_AUTH_TOKEN_KEY);
+      removeStorageItem(LEGACY_AUTH_TOKEN_KEY);
     }
 
     return null;
@@ -207,7 +366,6 @@ export function saveAuthSession(
   role: UserRole = "teacher",
   classroomId: ClassroomId | "all" = "sara"
 ): void {
-  if (typeof window === "undefined") return;
   const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
   const session: AuthSession = {
     authenticated: true,
@@ -215,15 +373,13 @@ export function saveAuthSession(
     classroomId,
     expiresAt: new Date().getTime() + thirtyDaysMs,
   };
-  localStorage.setItem(AUTH_TOKEN_KEY, JSON.stringify(session));
+  setStorageItem(AUTH_TOKEN_KEY, JSON.stringify(session));
   if (classroomId !== "all") {
     setActiveClassroomId(classroomId);
   }
 }
 
 export function clearAuthSession(): void {
-  if (typeof window === "undefined") return;
-  localStorage.removeItem(AUTH_TOKEN_KEY);
-  localStorage.removeItem(LEGACY_AUTH_TOKEN_KEY);
+  removeStorageItem(AUTH_TOKEN_KEY);
+  removeStorageItem(LEGACY_AUTH_TOKEN_KEY);
 }
-

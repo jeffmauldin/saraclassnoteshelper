@@ -8,6 +8,7 @@ import { CategoryDropdown } from "@/components/CategoryDropdown";
 import { NotesSection } from "@/components/NotesSection";
 import { ActionPanel } from "@/components/ActionPanel";
 import { ConfirmModal } from "@/components/ConfirmModal";
+import { ConflictModal } from "@/components/ConflictModal";
 import {
   getInitialStateForClassroom,
   createDefaultEntries,
@@ -19,6 +20,7 @@ import {
   saveLocalState,
   fetchServerState,
   syncStateToServer,
+  pullServerState,
 } from "@/lib/storage";
 import { AppState, SendResult } from "@/lib/types";
 import { CheckCircle } from "lucide-react";
@@ -47,7 +49,9 @@ function DailyDashboardContent() {
   const [showSendModal, setShowSendModal] = useState(false);
   const [showResendWarningModal, setShowResendWarningModal] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
+  const [showConflictModal, setShowConflictModal] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [isPulling, setIsPulling] = useState(false);
 
   const classroomProfile = CLASSROOM_PROFILES[activeClassroomId] || CLASSROOM_PROFILES.sara;
 
@@ -133,6 +137,84 @@ function DailyDashboardContent() {
       showToast("Saved locally (cloud sync offline)");
     }
   };
+
+  // Manual pull from cloud
+  const handleManualPull = async (force = false) => {
+    setIsPulling(true);
+    try {
+      const res = await pullServerState(activeClassroomId, {
+        force,
+        hasLocalUnsaved: syncStatus === "unsaved",
+      });
+
+      if (res.status === "updated" && res.serverState) {
+        setState({
+          ...res.serverState,
+          classroomId: activeClassroomId,
+          currentDate: state.currentDate,
+        });
+        setSyncStatus("saved");
+        setShowConflictModal(false);
+        showToast(res.message || "Loaded latest notes from cloud!");
+      } else if (res.status === "up_to_date") {
+        showToast(res.message || "Already up to date with cloud.");
+      } else if (res.status === "conflict_unsaved") {
+        setShowConflictModal(true);
+      } else if (res.status === "server_empty") {
+        showToast("No cloud notes found yet for this classroom.");
+      } else if (res.status === "offline") {
+        showToast("Could not reach cloud (offline).");
+      }
+    } catch {
+      showToast("Failed to pull from cloud.");
+    } finally {
+      setIsPulling(false);
+    }
+  };
+
+  // Bandwidth-friendly Smart Tab Resume: Auto-check cloud when switching back to tab
+  useEffect(() => {
+    let lastCheckTime = Date.now();
+
+    const handleTabResume = async () => {
+      if (typeof document === "undefined" || document.visibilityState !== "visible") return;
+
+      const now = Date.now();
+      // Throttle to at most once every 60 seconds
+      if (now - lastCheckTime < 60000) return;
+      lastCheckTime = now;
+
+      // If user has unsaved local edits or is sending/pulling, don't auto-pull in the background
+      if (syncStatus === "unsaved" || isSending || isPulling) return;
+
+      try {
+        const res = await pullServerState(activeClassroomId, {
+          force: false,
+          hasLocalUnsaved: false,
+        });
+
+        if (res.status === "updated" && res.serverState) {
+          setState({
+            ...res.serverState,
+            classroomId: activeClassroomId,
+            currentDate: getTodayDateString(),
+          });
+          setSyncStatus("saved");
+          showToast("Updated with latest notes from cloud!");
+        }
+      } catch {
+        // Silently ignore background check errors
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleTabResume);
+    window.addEventListener("focus", handleTabResume);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleTabResume);
+      window.removeEventListener("focus", handleTabResume);
+    };
+  }, [activeClassroomId, syncStatus, isSending, isPulling]);
 
   // Current active student
   const activeStudent =
@@ -293,6 +375,8 @@ function DailyDashboardContent() {
         currentDate={state.currentDate}
         syncStatus={syncStatus}
         onManualSync={triggerSync}
+        onPullCloud={() => handleManualPull(false)}
+        isPulling={isPulling}
         onLogout={logout}
         classroomId={activeClassroomId}
         userRole={session?.role || "teacher"}
@@ -435,6 +519,18 @@ function DailyDashboardContent() {
         }
         onConfirm={executeReset}
         onCancel={() => setShowResetModal(false)}
+      />
+
+      {/* MODAL 4: Cloud Sync Conflict Guard */}
+      <ConflictModal
+        isOpen={showConflictModal}
+        onPullCloud={() => handleManualPull(true)}
+        onKeepLocal={() => {
+          setShowConflictModal(false);
+          triggerSync();
+        }}
+        onCancel={() => setShowConflictModal(false)}
+        isProcessing={isPulling}
       />
     </div>
   );

@@ -25,7 +25,7 @@ A lightweight, mobile-friendly and laptop-friendly daily reporting application b
   * **Google App Password**: Sends directly from your or the teacher's Gmail account.
   * **Brevo API (Free Tier)**: 300 free emails/day.
   * **Test Simulator Mode**: Zero-setup preview and testing without sending real emails.
-* **🔄 Cross-Device Synchronization**: Make changes on your laptop or phone; state stays synced with snappy 0ms instant local editing.
+* **🔄 Cross-Device Smart Sync & Pull**: Make changes on your laptop or phone; state stays synced with snappy 0ms instant local editing, a dedicated "Pull Cloud" button in the header, smart tab-resume auto-check (zero battery-draining polling), and draft conflict safeguards.
 * **🔐 Role-Based Passcodes & 30-Day Persistence**: Dedicated teacher logins and an Admin master mode with 30-day "Remember this device" persistence.
 
 ---
@@ -120,7 +120,7 @@ Each classroom comes pre-loaded with demo students configured with **Gmail sub-a
 ```bash
 npm test
 ```
-Runs 44 automated assertions covering email generation, multi-classroom state isolation, cloud storage detection, and safeguard validation.
+Runs 53 automated assertions covering email generation, multi-classroom state isolation, cross-device smart sync, local conflict safeguards, cloud storage detection, and safeguard validation.
 
 ---
 

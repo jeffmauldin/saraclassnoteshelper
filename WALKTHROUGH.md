@@ -24,7 +24,11 @@ The **Classroom Daily Log & Parent Reporting System** has been built, tested, an
 - **Dynamic Category Dropdowns**: Contextual categories with customizable default values (e.g. *"No report"*) and one-tap quick selection pills.
 - **Notes 1 & Notes 2 with Voice Dictation**: Two separate notes textareas featuring built-in **Voice Dictation** (browser Web Speech API).
 - **Instant 0ms Local-First Editing**: All dropdown and text changes update immediately in browser memory with zero network delay.
-- **Cross-Device Cloud Sync**: Automatic background synchronization with server storage (`/api/data`), plus a manual "Sync to Cloud" button in the navigation bar.
+- **Cross-Device Smart Sync & Pull Cloud**:
+  - **"Pull Cloud" Button**: Explicit downward-sync button in the top navbar to pull down notes recorded on a phone or another device on demand.
+  - **Bandwidth-Friendly Tab Resume**: Automatically checks for updates when switching back to the dashboard tab (`visibilitychange` / focus) throttled to 60+ seconds of idle time without battery-draining polling.
+  - **Local Draft Conflict Protection**: If unsaved notes are typed locally and newer notes arrive from the cloud, a dedicated `ConflictModal` prompts the teacher to choose between pulling cloud notes or keeping the local draft.
+- **Cross-Device Cloud Sync**: Automatic background synchronization with server storage (`/api/data`), plus manual push/pull controls in the navigation bar.
 
 ### 3. 🛡️ Safeguards & Actions (`src/components/ActionPanel.tsx`, `ConfirmModal.tsx`)
 - **"Send All Email Reports" Button**:
@@ -54,7 +58,7 @@ The **Classroom Daily Log & Parent Reporting System** has been built, tested, an
 
 ## 🧪 Verification & Automated Test Results
 
-The test suite in [`src/tests/testSuite.ts`](file:///workspaces/saraclassnoteshelper/src/tests/testSuite.ts) was executed and passed with **100% success (41/41 assertions)**:
+The test suite in [`src/tests/testSuite.ts`](file:///workspaces/saraclassnoteshelper/src/tests/testSuite.ts) was executed and passed with **100% success (53/53 assertions)**:
 
 ```text
 ========================================================
@@ -105,9 +109,18 @@ The test suite in [`src/tests/testSuite.ts`](file:///workspaces/saraclassnoteshe
   ✅ PASS: Defaults gracefully to local disk when cloud env vars absent
   ✅ PASS: Detects Vercel KV environment variables (KV_REST_API_URL/TOKEN)
   ✅ PASS: Detects Upstash Redis environment variables (UPSTASH_REDIS_REST_URL/TOKEN)
+  ✅ PASS: pullServerState returns 'offline' when server errors
+  ✅ PASS: pullServerState returns 'server_empty' when no cloud state exists
+  ✅ PASS: pullServerState recognizes when local is already up to date
+  ✅ PASS: pullServerState cleanly pulls newer cloud updates when local has no unsaved edits
+  ✅ PASS: Local state was updated with cloud notes
+  ✅ PASS: pullServerState detects conflict and does not overwrite unsaved local drafts
+  ✅ PASS: Local draft was safeguarded against loss
+  ✅ PASS: Force pull cleanly overwrites when user explicitly confirms
+  ✅ PASS: Cloud state accepted upon explicit user confirmation
 
 ========================================================
- 📊 FINAL RESULTS: 44 PASSED, 0 FAILED
+ 📊 FINAL RESULTS: 53 PASSED, 0 FAILED
 ========================================================
 ```
 
