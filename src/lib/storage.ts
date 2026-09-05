@@ -198,7 +198,11 @@ export async function fetchServerState(classroomId?: ClassroomId): Promise<AppSt
   return null;
 }
 
-export async function syncStateToServer(state: AppState, classroomId?: ClassroomId): Promise<boolean> {
+export async function syncStateToServer(
+  state: AppState,
+  classroomId?: ClassroomId,
+  force: boolean = false
+): Promise<boolean> {
   const cid: ClassroomId = classroomId || state.classroomId || getActiveClassroomId();
   const toSync: AppState = {
     ...state,
@@ -210,7 +214,7 @@ export async function syncStateToServer(state: AppState, classroomId?: Classroom
     const res = await fetch(`/api/data?classroom=${cid}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ state: toSync }),
+      body: JSON.stringify({ state: toSync, force }),
     });
     if (res.ok) {
       setLastSyncedTimestamp(cid, toSync.updatedAt || Date.now());

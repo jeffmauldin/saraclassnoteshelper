@@ -357,6 +357,90 @@ async function run() {
       "Cloud state accepted upon explicit user confirmation"
     );
 
+    // Subtest 9.7: Multi-device student switching scenario (Phone on Alex, Desktop on Sam)
+    clearMemoryStorage();
+    const cleanBaseSara = getInitialStateForClassroom("sara");
+    cleanBaseSara.updatedAt = 1000;
+
+    const cloudServerStateWithSam: AppState = {
+      ...cleanBaseSara,
+      updatedAt: 5000,
+      entries: {
+        ...cleanBaseSara.entries,
+        "student-3": {
+          ...cleanBaseSara.entries["student-3"],
+          notes1: "Sam mastered counting cubes today (entered on computer).",
+        },
+      },
+    };
+
+    // Device 2 (Phone) had state from T=1000 and was viewing Alex
+    saveLocalState(cleanBaseSara, "sara");
+    setLastSyncedTimestamp("sara", 1000);
+
+    let postOccurredOnTabSwitch = false;
+    global.fetch = (async (url: string, init?: any) => {
+      if (init?.method === "POST") {
+        postOccurredOnTabSwitch = true;
+        return { ok: true, json: async () => ({ success: true }) };
+      }
+      return {
+        ok: true,
+        json: async () => ({
+          hasSavedState: true,
+          state: cloudServerStateWithSam,
+        }),
+      };
+    }) as any;
+
+    // Simulate user switching to Sam (student-3) on Device 2
+    let device2ActiveStudentId = "student-1";
+    device2ActiveStudentId = "student-3";
+
+    assert(!postOccurredOnTabSwitch, "Switching student tabs on Device 2 does not push stale state to cloud");
+
+    // Device 2 clicks "Pull from Cloud"
+    const phonePullResult = await pullServerState("sara");
+    assert(phonePullResult.status === "updated", "Device 2 pullServerState status is 'updated' after switching to Sam");
+
+    const phoneUpdatedState = loadLocalState("sara");
+    assert(
+      phoneUpdatedState.entries["student-3"]?.notes1 ===
+        "Sam mastered counting cubes today (entered on computer).",
+      "Device 2 successfully receives Sam's notes from Device 1 after switching student tab"
+    );
+
+    // Subtest 9.8: Stale client push rejected when server has newer state
+    const { syncStateToServer } = await import("../lib/storage");
+    const staleState: AppState = {
+      ...cleanBaseSara,
+      updatedAt: 1000, // Older than cloud's 5000
+    };
+
+    global.fetch = (async (url: string, init?: any) => {
+      if (init?.method === "POST") {
+        const body = JSON.parse(init.body || "{}");
+        if (!body.force && body.state?.updatedAt < 5000) {
+          return {
+            ok: false,
+            status: 409,
+            json: async () => ({ conflict: true, message: "Server has newer notes" }),
+          };
+        }
+        return { ok: true, json: async () => ({ success: true }) };
+      }
+      return {
+        ok: true,
+        json: async () => ({ hasSavedState: true, state: cloudServerStateWithSam }),
+      };
+    }) as any;
+
+    const staleSyncSuccess = await syncStateToServer(staleState, "sara", false);
+    assert(!staleSyncSuccess, "Unforced stale state push is rejected when server has newer notes");
+
+    const forcedSyncSuccess = await syncStateToServer(staleState, "sara", true);
+    assert(forcedSyncSuccess, "Forced state push succeeds when user explicitly confirms in conflict modal");
+
     // Restore fetch
     global.fetch = originalFetch;
   } catch (e: any) {

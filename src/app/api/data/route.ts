@@ -205,6 +205,29 @@ export async function POST(req: NextRequest) {
       classroomId,
       updatedAt: body.state.updatedAt || Date.now(),
     };
+
+    const { state: existingState } = await readSavedState(classroomId);
+    const isForce = body.force === true || searchParams.get("force") === "true";
+
+    // Guard against stale clients overwriting newer server data unless force is explicitly set
+    if (
+      !isForce &&
+      existingState &&
+      existingState.updatedAt &&
+      toSave.updatedAt &&
+      toSave.updatedAt < existingState.updatedAt
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          conflict: true,
+          message: "Server has newer notes. Please pull from cloud before syncing.",
+          serverUpdatedAt: existingState.updatedAt,
+        },
+        { status: 409 }
+      );
+    }
+
     await writeSavedState(toSave, classroomId);
     const cloudActive = isCloudStorageConfigured();
 

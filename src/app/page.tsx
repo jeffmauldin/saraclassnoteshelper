@@ -126,15 +126,15 @@ function DailyDashboardContent() {
   );
 
   // Manual or automatic cloud sync
-  const triggerSync = async () => {
+  const triggerSync = async (force = false) => {
     setSyncStatus("syncing");
-    const ok = await syncStateToServer(state, activeClassroomId);
+    const ok = await syncStateToServer(state, activeClassroomId, force);
     if (ok) {
       setSyncStatus("saved");
       showToast("All changes saved to cloud!");
     } else {
       setSyncStatus("error");
-      showToast("Saved locally (cloud sync offline)");
+      showToast("Saved locally (cloud sync offline or newer cloud notes exist)");
     }
   };
 
@@ -397,10 +397,7 @@ function DailyDashboardContent() {
         <StudentTabs
           students={state.students}
           selectedStudentId={selectedStudentId}
-          onSelectStudent={(id) => {
-            setSelectedStudentId(id);
-            syncStateToServer(state, activeClassroomId);
-          }}
+          onSelectStudent={(id) => setSelectedStudentId(id)}
           entries={state.entries}
         />
 
@@ -527,7 +524,7 @@ function DailyDashboardContent() {
         onPullCloud={() => handleManualPull(true)}
         onKeepLocal={() => {
           setShowConflictModal(false);
-          triggerSync();
+          triggerSync(true);
         }}
         onCancel={() => setShowConflictModal(false)}
         isProcessing={isPulling}
