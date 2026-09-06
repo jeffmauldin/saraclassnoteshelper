@@ -31,11 +31,11 @@ export function ConfirmModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-gray-100 relative">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-gray-150 dark:border-slate-800 relative transition-colors">
         <button
           onClick={onCancel}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition"
+          className="absolute top-4 right-4 text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-200 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition"
         >
           <X className="w-5 h-5" />
         </button>
@@ -44,10 +44,10 @@ export function ConfirmModal({
           <div
             className={`p-3 rounded-2xl flex-shrink-0 ${
               variant === "danger"
-                ? "bg-rose-100 text-rose-600"
+                ? "bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-300"
                 : variant === "warning"
-                ? "bg-amber-100 text-amber-700"
-                : "bg-sky-100 text-sky-600"
+                ? "bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300"
+                : "bg-sky-100 dark:bg-sky-950/60 text-sky-600 dark:text-sky-300"
             }`}
           >
             {variant === "danger" || variant === "warning" ? (
@@ -57,13 +57,13 @@ export function ConfirmModal({
             )}
           </div>
           <div>
-            <h3 className="text-lg font-bold text-gray-900">{title}</h3>
-            <p className="text-sm text-gray-600 mt-1">{message}</p>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">{title}</h3>
+            <p className="text-sm text-gray-600 dark:text-slate-300 mt-1">{message}</p>
           </div>
         </div>
 
         {details && (
-          <div className="my-4 p-3.5 bg-gray-50 rounded-2xl border border-gray-200 text-xs text-gray-700 max-h-48 overflow-y-auto">
+          <div className="my-4 p-3.5 bg-gray-50 dark:bg-slate-800/80 rounded-2xl border border-gray-200 dark:border-slate-700 text-xs text-gray-700 dark:text-slate-200 max-h-48 overflow-y-auto">
             {details}
           </div>
         )}
@@ -73,7 +73,7 @@ export function ConfirmModal({
             type="button"
             onClick={onCancel}
             disabled={isProcessing}
-            className="px-4 py-2 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-100 transition"
+            className="px-4 py-2 rounded-xl text-sm font-semibold text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition"
           >
             {cancelText}
           </button>

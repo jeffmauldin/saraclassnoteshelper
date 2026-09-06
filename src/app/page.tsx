@@ -369,7 +369,7 @@ function DailyDashboardContent() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col pb-12">
+    <div className="min-h-screen flex flex-col pb-12 bg-slate-50 dark:bg-slate-950 transition-colors">
       {/* Navigation Header */}
       <Navbar
         currentDate={state.currentDate}
@@ -385,7 +385,7 @@ function DailyDashboardContent() {
 
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-50 bg-gray-900 text-white text-xs sm:text-sm font-semibold px-4 py-3 rounded-2xl shadow-xl border border-gray-800 flex items-center space-x-2 animate-in slide-in-from-bottom-2">
+        <div className="fixed bottom-5 right-5 z-50 bg-gray-900 dark:bg-slate-800 text-white text-xs sm:text-sm font-semibold px-4 py-3 rounded-2xl shadow-xl border border-gray-800 dark:border-slate-700 flex items-center space-x-2 animate-in slide-in-from-bottom-2">
           <CheckCircle className="w-4 h-4 text-emerald-400" />
           <span>{toastMessage}</span>
         </div>
@@ -475,7 +475,7 @@ function DailyDashboardContent() {
         isProcessing={isSending}
         details={
           <div className="space-y-1.5">
-            <p className="font-bold text-gray-800">Dispatch Summary:</p>
+            <p className="font-bold text-gray-800 dark:text-slate-200">Dispatch Summary:</p>
             <p>• {state.students.length} individual student emails</p>
             <p>• 1 Master summary to: {state.settings.emailSettings.masterRecipients.join(", ")}</p>
             <p>• Provider: <span className="font-mono font-semibold uppercase">{state.settings.emailSettings.provider}</span></p>
@@ -494,7 +494,7 @@ function DailyDashboardContent() {
         variant="warning"
         isProcessing={isSending}
         details={
-          <p className="text-amber-800">
+          <p className="text-amber-800 dark:text-amber-300">
             Re-sending will dispatch another set of emails to all parent inboxes for today ({state.currentDate}).
           </p>
         }
@@ -510,7 +510,7 @@ function DailyDashboardContent() {
         confirmText="Yes, Reset Everything"
         variant="danger"
         details={
-          <p className="text-rose-800">
+          <p className="text-rose-800 dark:text-rose-300">
             ⚠️ This will clear today&apos;s typed notes and restore all menu selections to their default &quot;No report&quot; states for {classroomProfile.name}.
           </p>
         }

@@ -18,12 +18,12 @@ export function StudentTabs({
   entries,
 }: StudentTabsProps) {
   return (
-    <div className="bg-white rounded-2xl p-3 border border-gray-200 shadow-sm">
+    <div className="bg-white dark:bg-slate-900 rounded-2xl p-3 border border-gray-200 dark:border-slate-800 shadow-xs transition-colors">
       <div className="flex items-center justify-between mb-2 px-1">
-        <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+        <span className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">
           Students ({students.length})
         </span>
-        <span className="text-xs text-gray-400">
+        <span className="text-xs text-gray-400 dark:text-slate-500">
           Tap student to record notes
         </span>
       </div>
@@ -41,19 +41,19 @@ export function StudentTabs({
               onClick={() => onSelectStudent(student.id)}
               className={`flex flex-col items-start p-3 rounded-xl text-left border transition relative ${
                 isSelected
-                  ? "bg-sky-600 text-white border-sky-600 shadow-md ring-2 ring-sky-300"
-                  : "bg-gray-50 hover:bg-gray-100 text-gray-800 border-gray-200"
+                  ? "bg-sky-600 text-white border-sky-600 shadow-md ring-2 ring-sky-300 dark:ring-sky-500/50"
+                  : "bg-gray-50 dark:bg-slate-800/80 hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-800 dark:text-slate-200 border-gray-200 dark:border-slate-700"
               }`}
             >
               <div className="flex items-center justify-between w-full mb-1">
                 <div className="flex items-center space-x-1.5 font-semibold text-sm">
-                  <User className={`w-4 h-4 ${isSelected ? "text-sky-100" : "text-gray-400"}`} />
+                  <User className={`w-4 h-4 ${isSelected ? "text-sky-100" : "text-gray-400 dark:text-slate-400"}`} />
                   <span className="truncate">{student.name}</span>
                 </div>
                 {hasNotes && (
                   <CheckCircle
                     className={`w-3.5 h-3.5 ${
-                      isSelected ? "text-emerald-300" : "text-emerald-500"
+                      isSelected ? "text-emerald-300" : "text-emerald-500 dark:text-emerald-400"
                     }`}
                   />
                 )}

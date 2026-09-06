@@ -10,6 +10,7 @@ import {
 } from "@/lib/initialData";
 import { loadLocalState, saveLocalState, syncStateToServer, fetchServerState } from "@/lib/storage";
 import { AppState, Category, Student, EmailProviderType, ClassroomId } from "@/lib/types";
+import { useTheme } from "@/lib/theme";
 import {
   ArrowLeft,
   Save,
@@ -22,6 +23,10 @@ import {
   Check,
   AlertCircle,
   HelpCircle,
+  Palette,
+  Sun,
+  Moon,
+  Laptop,
 } from "lucide-react";
 
 export default function SettingsPage() {
@@ -36,8 +41,11 @@ function SettingsContent() {
   const { session, activeClassroomId, switchClassroom } = useSession();
   const profile = CLASSROOM_PROFILES[activeClassroomId] || CLASSROOM_PROFILES.sara;
   const [state, setState] = useState<AppState>(() => getInitialStateForClassroom(activeClassroomId));
-  const [activeTab, setActiveTab] = useState<"students" | "categories" | "email" | "security">("students");
+  const [activeTab, setActiveTab] = useState<"students" | "categories" | "email" | "security" | "appearance">("students");
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
+
+  // Theme hook
+  const { theme, resolvedTheme, setTheme } = useTheme();
 
   // Form states for adding new student
   const [newStudentName, setNewStudentName] = useState("");
@@ -62,7 +70,7 @@ function SettingsContent() {
     };
     setSaveStatus("Saving...");
     saveLocalState(toSave, activeClassroomId);
-    const ok = await syncStateToServer(toSave, activeClassroomId);
+    const ok = await syncStateToServer(toSave, activeClassroomId, true);
     if (ok) {
       setSaveStatus("Settings saved successfully!");
     } else {
@@ -70,7 +78,6 @@ function SettingsContent() {
     }
     setTimeout(() => setSaveStatus(null), 3000);
   };
-
 
   // Student management
   const handleAddStudent = () => {
@@ -158,45 +165,49 @@ function SettingsContent() {
     handleSaveAll(updated);
   };
 
-  const handleDeleteCategory = (catId: string) => {
-    if (!confirm("Are you sure you want to delete this dropdown category?")) return;
-    const updatedCategories = state.categories.filter((c) => c.id !== catId);
+  const handleDeleteCategory = (categoryId: string) => {
+    if (!confirm("Are you sure you want to delete this category?")) return;
+    const updatedCategories = state.categories.filter((c) => c.id !== categoryId);
     const updated = { ...state, categories: updatedCategories };
     setState(updated);
     handleSaveAll(updated);
   };
 
   const handleAddOptionToCategory = (catIndex: number) => {
-    const label = prompt("Enter new dropdown option label:");
-    if (!label?.trim()) return;
+    const label = prompt("Enter new option label (e.g. 'Completed reading assignment'):");
+    if (!label || !label.trim()) return;
+
     const updatedCategories = [...state.categories];
-    const newOpt = { id: `opt-${Date.now()}`, label: label.trim() };
-    updatedCategories[catIndex].options.push(newOpt);
+    const targetCat = updatedCategories[catIndex];
+    targetCat.options.push({
+      id: `opt-${Date.now()}`,
+      label: label.trim(),
+    });
+
     const updated = { ...state, categories: updatedCategories };
     setState(updated);
     handleSaveAll(updated);
   };
 
-  const handleDeleteOptionFromCategory = (catIndex: number, optId: string) => {
+  const handleDeleteOptionFromCategory = (catIndex: number, optionId: string) => {
     const updatedCategories = [...state.categories];
-    if (updatedCategories[catIndex].options.length <= 1) {
+    const targetCat = updatedCategories[catIndex];
+    if (targetCat.options.length <= 1) {
       alert("A category must have at least one option.");
       return;
     }
-    updatedCategories[catIndex].options = updatedCategories[catIndex].options.filter(
-      (o) => o.id !== optId
-    );
-    if (updatedCategories[catIndex].defaultOptionId === optId) {
-      updatedCategories[catIndex].defaultOptionId = updatedCategories[catIndex].options[0].id;
+    targetCat.options = targetCat.options.filter((o) => o.id !== optionId);
+    if (targetCat.defaultOptionId === optionId) {
+      targetCat.defaultOptionId = targetCat.options[0].id;
     }
     const updated = { ...state, categories: updatedCategories };
     setState(updated);
     handleSaveAll(updated);
   };
 
-  const handleSetDefaultOption = (catIndex: number, optId: string) => {
+  const handleSetDefaultOption = (catIndex: number, optionId: string) => {
     const updatedCategories = [...state.categories];
-    updatedCategories[catIndex].defaultOptionId = optId;
+    updatedCategories[catIndex].defaultOptionId = optionId;
     const updated = { ...state, categories: updatedCategories };
     setState(updated);
   };
@@ -215,32 +226,32 @@ function SettingsContent() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-16">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-16 transition-colors">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-xs">
+      <header className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 sticky top-0 z-30 shadow-xs">
         <div className="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center space-x-3">
             <Link
               href="/"
-              className="p-2 text-gray-500 hover:text-gray-900 rounded-xl hover:bg-gray-100 transition"
+              className="p-2 text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800 transition"
               title="Return to Daily Log"
             >
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <div>
               <div className="flex items-center space-x-2">
-                <h1 className="font-bold text-lg text-gray-900">
+                <h1 className="font-bold text-lg text-gray-900 dark:text-white">
                   {profile.icon} {profile.name} Settings
                 </h1>
                 {session?.role === "admin" && (
-                  <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200 flex items-center">
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 flex items-center">
                     <Shield className="w-2.5 h-2.5 mr-0.5" />
                     Admin
                   </span>
                 )}
               </div>
-              <p className="text-xs text-gray-500">
-                Manage students, dropdowns, emails &amp; security for {profile.name}
+              <p className="text-xs text-gray-500 dark:text-slate-400">
+                Manage students, dropdowns, appearance, emails &amp; security for {profile.name}
               </p>
             </div>
           </div>
@@ -248,15 +259,15 @@ function SettingsContent() {
           <div className="flex items-center space-x-2">
             {/* Admin Classroom Switcher */}
             {session?.role === "admin" && (
-              <div className="flex bg-gray-100 p-1 rounded-xl text-xs font-semibold mr-1">
+              <div className="flex bg-gray-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-semibold mr-1">
                 {(Object.keys(CLASSROOM_PROFILES) as ClassroomId[]).map((cid) => (
                   <button
                     key={cid}
                     onClick={() => switchClassroom(cid)}
                     className={`px-3 py-1.5 rounded-lg transition ${
                       activeClassroomId === cid
-                        ? "bg-white text-gray-900 shadow-xs font-bold"
-                        : "text-gray-500 hover:text-gray-900"
+                        ? "bg-white dark:bg-slate-700 text-gray-900 dark:text-white shadow-xs font-bold"
+                        : "text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white"
                     }`}
                   >
                     {CLASSROOM_PROFILES[cid].icon} {CLASSROOM_PROFILES[cid].teacherName}
@@ -266,13 +277,13 @@ function SettingsContent() {
             )}
 
             {saveStatus && (
-              <span className="text-xs text-emerald-600 font-semibold bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+              <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800">
                 {saveStatus}
               </span>
             )}
             <button
               onClick={() => handleSaveAll()}
-              className="flex items-center space-x-1.5 px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-sm transition"
+              className="flex items-center space-x-1.5 px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-xs transition"
             >
               <Save className="w-4 h-4" />
               <span>Save Changes</span>
@@ -283,13 +294,13 @@ function SettingsContent() {
 
       {/* Main Settings Navigation Tabs */}
       <main className="max-w-5xl mx-auto px-4 pt-6 space-y-6">
-        <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-2">
+        <div className="flex flex-wrap gap-2 border-b border-gray-200 dark:border-slate-800 pb-2">
           <button
             onClick={() => setActiveTab("students")}
             className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl font-bold text-xs transition ${
               activeTab === "students"
-                ? "bg-sky-600 text-white shadow-sm"
-                : "bg-white text-gray-600 hover:bg-gray-100"
+                ? "bg-sky-600 text-white shadow-xs"
+                : "bg-white dark:bg-slate-900 text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-850"
             }`}
           >
             <Users className="w-4 h-4" />
@@ -300,8 +311,8 @@ function SettingsContent() {
             onClick={() => setActiveTab("categories")}
             className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl font-bold text-xs transition ${
               activeTab === "categories"
-                ? "bg-sky-600 text-white shadow-sm"
-                : "bg-white text-gray-600 hover:bg-gray-100"
+                ? "bg-sky-600 text-white shadow-xs"
+                : "bg-white dark:bg-slate-900 text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-850"
             }`}
           >
             <ListFilter className="w-4 h-4" />
@@ -309,11 +320,23 @@ function SettingsContent() {
           </button>
 
           <button
+            onClick={() => setActiveTab("appearance")}
+            className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl font-bold text-xs transition ${
+              activeTab === "appearance"
+                ? "bg-sky-600 text-white shadow-xs"
+                : "bg-white dark:bg-slate-900 text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-850"
+            }`}
+          >
+            <Palette className="w-4 h-4" />
+            <span>Appearance &amp; Theme</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab("email")}
             className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl font-bold text-xs transition ${
               activeTab === "email"
-                ? "bg-sky-600 text-white shadow-sm"
-                : "bg-white text-gray-600 hover:bg-gray-100"
+                ? "bg-sky-600 text-white shadow-xs"
+                : "bg-white dark:bg-slate-900 text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-850"
             }`}
           >
             <Mail className="w-4 h-4" />
@@ -324,12 +347,12 @@ function SettingsContent() {
             onClick={() => setActiveTab("security")}
             className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl font-bold text-xs transition ${
               activeTab === "security"
-                ? "bg-sky-600 text-white shadow-sm"
-                : "bg-white text-gray-600 hover:bg-gray-100"
+                ? "bg-sky-600 text-white shadow-xs"
+                : "bg-white dark:bg-slate-900 text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-850"
             }`}
           >
             <Shield className="w-4 h-4" />
-            <span>Passcode & Security</span>
+            <span>Passcode &amp; Security</span>
           </button>
         </div>
 
@@ -337,9 +360,9 @@ function SettingsContent() {
         {activeTab === "students" && (
           <div className="space-y-6">
             {/* Add Student Card */}
-            <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-3">
-              <h2 className="text-sm font-bold text-gray-900 flex items-center space-x-1.5">
-                <Plus className="w-4 h-4 text-sky-600" />
+            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-xs space-y-3">
+              <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center space-x-1.5">
+                <Plus className="w-4 h-4 text-sky-600 dark:text-sky-400" />
                 <span>Add New Student to {profile.name}</span>
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -348,26 +371,26 @@ function SettingsContent() {
                   placeholder="Student Name (e.g. Emma W.)"
                   value={newStudentName}
                   onChange={(e) => setNewStudentName(e.target.value)}
-                  className="px-3.5 py-2.5 text-xs font-medium rounded-xl border border-gray-200 focus:border-sky-500 outline-none"
+                  className="px-3.5 py-2.5 text-xs font-medium rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 focus:border-sky-500 outline-none"
                 />
                 <input
                   type="text"
                   placeholder="Parent/Guardian (e.g. Jane Watson)"
                   value={newStudentParents}
                   onChange={(e) => setNewStudentParents(e.target.value)}
-                  className="px-3.5 py-2.5 text-xs font-medium rounded-xl border border-gray-200 focus:border-sky-500 outline-none"
+                  className="px-3.5 py-2.5 text-xs font-medium rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 focus:border-sky-500 outline-none"
                 />
                 <input
                   type="text"
                   placeholder="Parent Emails (comma-separated)"
                   value={newStudentEmails}
                   onChange={(e) => setNewStudentEmails(e.target.value)}
-                  className="px-3.5 py-2.5 text-xs font-medium rounded-xl border border-gray-200 focus:border-sky-500 outline-none font-mono"
+                  className="px-3.5 py-2.5 text-xs font-medium rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 focus:border-sky-500 outline-none font-mono"
                 />
               </div>
               <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-                <p className="text-[11px] text-gray-400">
-                  💡 <span className="font-semibold text-gray-600">Testing Tip:</span> Use Gmail sub-addressing (e.g. <code className="bg-gray-100 px-1 py-0.5 rounded font-mono text-gray-700">mauldinjeff+student@gmail.com</code>) so test reports safely route straight to your inbox!
+                <p className="text-[11px] text-gray-400 dark:text-slate-400">
+                  💡 <span className="font-semibold text-gray-600 dark:text-slate-300">Testing Tip:</span> Use Gmail sub-addressing (e.g. <code className="bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 px-1 py-0.5 rounded font-mono">mauldinjeff+student@gmail.com</code>) so test reports route safely straight to your inbox!
                 </p>
                 <button
                   type="button"
@@ -382,30 +405,30 @@ function SettingsContent() {
 
             {/* Students List */}
             <div className="space-y-3">
-              <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+              <h2 className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">
                 Current Students ({state.students.length})
               </h2>
 
               {state.students.map((student, idx) => (
                 <div
                   key={student.id}
-                  className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                  className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3"
                 >
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-1">
                     <div>
-                      <label className="text-[10px] font-bold text-gray-400 uppercase">
+                      <label className="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase">
                         Student Name
                       </label>
                       <input
                         type="text"
                         value={student.name}
                         onChange={(e) => handleUpdateStudent(idx, "name", e.target.value)}
-                        className="w-full text-xs font-bold text-gray-800 p-2 rounded-lg border border-gray-200"
+                        className="w-full text-xs font-bold text-gray-800 dark:text-slate-100 bg-gray-50 dark:bg-slate-800/80 p-2 rounded-lg border border-gray-200 dark:border-slate-700"
                       />
                     </div>
 
                     <div>
-                      <label className="text-[10px] font-bold text-gray-400 uppercase">
+                      <label className="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase">
                         Parents / Guardians
                       </label>
                       <input
@@ -415,12 +438,12 @@ function SettingsContent() {
                           handleUpdateStudent(idx, "parentNames", e.target.value)
                         }
                         placeholder="e.g. John & Mary"
-                        className="w-full text-xs text-gray-700 p-2 rounded-lg border border-gray-200"
+                        className="w-full text-xs text-gray-700 dark:text-slate-200 bg-gray-50 dark:bg-slate-800/80 p-2 rounded-lg border border-gray-200 dark:border-slate-700"
                       />
                     </div>
 
                     <div>
-                      <label className="text-[10px] font-bold text-gray-400 uppercase">
+                      <label className="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase">
                         Email Recipients (Comma-Separated)
                       </label>
                       <input
@@ -430,14 +453,14 @@ function SettingsContent() {
                           handleUpdateStudent(idx, "emails", e.target.value)
                         }
                         placeholder="parent1@example.com, parent2@example.com"
-                        className="w-full text-xs text-gray-700 p-2 rounded-lg border border-gray-200 font-mono"
+                        className="w-full text-xs text-gray-700 dark:text-slate-200 bg-gray-50 dark:bg-slate-800/80 p-2 rounded-lg border border-gray-200 dark:border-slate-700 font-mono"
                       />
                     </div>
                   </div>
 
                   <button
                     onClick={() => handleDeleteStudent(student.id)}
-                    className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition self-end sm:self-center"
+                    className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition self-end sm:self-center"
                     title="Delete student"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -452,9 +475,9 @@ function SettingsContent() {
         {activeTab === "categories" && (
           <div className="space-y-6">
             {/* Add Category */}
-            <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-3">
-              <h2 className="text-sm font-bold text-gray-900 flex items-center space-x-1.5">
-                <Plus className="w-4 h-4 text-sky-600" />
+            <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-xs space-y-3">
+              <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center space-x-1.5">
+                <Plus className="w-4 h-4 text-sky-600 dark:text-sky-400" />
                 <span>Add New Dropdown Category</span>
               </h2>
               <div className="flex gap-3">
@@ -463,7 +486,7 @@ function SettingsContent() {
                   placeholder="Category Name (e.g. Lunch Report, Social Interaction)"
                   value={newCategoryName}
                   onChange={(e) => setNewCategoryName(e.target.value)}
-                  className="flex-1 px-3.5 py-2.5 text-xs font-medium rounded-xl border border-gray-200 focus:border-sky-500 outline-none"
+                  className="flex-1 px-3.5 py-2.5 text-xs font-medium rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 focus:border-sky-500 outline-none"
                 />
                 <button
                   type="button"
@@ -481,7 +504,7 @@ function SettingsContent() {
               {state.categories.map((cat, catIdx) => (
                 <div
                   key={cat.id}
-                  className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-3"
+                  className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-xs space-y-3"
                 >
                   <div className="flex items-center justify-between">
                     <input
@@ -492,20 +515,20 @@ function SettingsContent() {
                         updated[catIdx].name = e.target.value;
                         setState({ ...state, categories: updated });
                       }}
-                      className="font-bold text-sm text-gray-900 border-b border-dashed border-gray-300 focus:border-sky-500 outline-none pb-0.5"
+                      className="font-bold text-sm text-gray-900 dark:text-white bg-transparent border-b border-dashed border-gray-300 dark:border-slate-700 focus:border-sky-500 outline-none pb-0.5"
                     />
 
                     <div className="flex items-center space-x-2">
                       <button
                         onClick={() => handleAddOptionToCategory(catIdx)}
-                        className="text-xs font-bold text-sky-600 hover:text-sky-800 bg-sky-50 hover:bg-sky-100 px-3 py-1.5 rounded-lg transition flex items-center space-x-1"
+                        className="text-xs font-bold text-sky-600 dark:text-sky-400 hover:text-sky-800 dark:hover:text-sky-300 bg-sky-50 dark:bg-sky-950/50 hover:bg-sky-100 dark:hover:bg-sky-900/50 px-3 py-1.5 rounded-lg transition flex items-center space-x-1"
                       >
                         <Plus className="w-3 h-3" />
                         <span>Add Option</span>
                       </button>
                       <button
                         onClick={() => handleDeleteCategory(cat.id)}
-                        className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition"
+                        className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition"
                         title="Delete category"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -515,7 +538,7 @@ function SettingsContent() {
 
                   {/* Options pills */}
                   <div className="space-y-2 pt-2">
-                    <p className="text-[11px] font-semibold text-gray-400">
+                    <p className="text-[11px] font-semibold text-gray-400 dark:text-slate-400">
                       Options (Click &quot;Make Default&quot; to set the initial reset value):
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -526,8 +549,8 @@ function SettingsContent() {
                             key={opt.id}
                             className={`flex items-center justify-between p-2.5 rounded-xl border text-xs ${
                               isDefault
-                                ? "bg-sky-50/70 border-sky-300 text-sky-950 font-semibold"
-                                : "bg-gray-50 border-gray-200 text-gray-700"
+                                ? "bg-sky-50/70 dark:bg-sky-950/40 border-sky-300 dark:border-sky-700 text-sky-950 dark:text-sky-200 font-semibold"
+                                : "bg-gray-50 dark:bg-slate-800/80 border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-200"
                             }`}
                           >
                             <span className="truncate">{opt.label}</span>
@@ -541,7 +564,7 @@ function SettingsContent() {
                                 <button
                                   type="button"
                                   onClick={() => handleSetDefaultOption(catIdx, opt.id)}
-                                  className="text-[10px] text-gray-500 hover:text-sky-600 hover:underline px-1 py-0.5"
+                                  className="text-[10px] text-gray-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 hover:underline px-1 py-0.5"
                                 >
                                   Make Default
                                 </button>
@@ -551,7 +574,7 @@ function SettingsContent() {
                                 onClick={() =>
                                   handleDeleteOptionFromCategory(catIdx, opt.id)
                                 }
-                                className="text-gray-400 hover:text-rose-600 p-1"
+                                className="text-gray-400 dark:text-slate-500 hover:text-rose-600 p-1"
                                 title="Remove option"
                               >
                                 <Trash2 className="w-3 h-3" />
@@ -568,12 +591,144 @@ function SettingsContent() {
           </div>
         )}
 
-        {/* TAB 3: EMAIL CONFIGURATION */}
+        {/* TAB 3: APPEARANCE & THEME */}
+        {activeTab === "appearance" && (
+          <div className="space-y-6">
+            <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-xs space-y-5 transition-colors">
+              <div>
+                <h2 className="text-base font-bold text-gray-900 dark:text-white flex items-center space-x-2">
+                  <Palette className="w-5 h-5 text-sky-600 dark:text-sky-400" />
+                  <span>Appearance &amp; Display Theme</span>
+                </h2>
+                <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
+                  Choose how the Classroom Daily Log appears on your device. Easily switch between bright light mode and eye-friendly dark mode anytime.
+                </p>
+              </div>
+
+              {/* Theme Choice Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                {/* Light Mode */}
+                <button
+                  type="button"
+                  onClick={() => setTheme("light")}
+                  className={`p-4 rounded-2xl border-2 text-left transition flex flex-col justify-between relative ${
+                    theme === "light"
+                      ? "border-sky-600 bg-sky-50/50 dark:bg-sky-950/40 ring-2 ring-sky-200 dark:ring-sky-800"
+                      : "border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:border-gray-300 dark:hover:border-slate-700"
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="p-2 rounded-xl bg-amber-100 text-amber-700">
+                        <Sun className="w-5 h-5" />
+                      </div>
+                      {theme === "light" && (
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-sky-600 text-white flex items-center space-x-1">
+                          <Check className="w-3 h-3" />
+                          <span>Active</span>
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="font-bold text-sm text-gray-900 dark:text-white">☀️ Light Mode</h3>
+                    <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
+                      Crisp white background with high-contrast text and clean borders. Great for bright classrooms.
+                    </p>
+                  </div>
+                </button>
+
+                {/* Dark Mode */}
+                <button
+                  type="button"
+                  onClick={() => setTheme("dark")}
+                  className={`p-4 rounded-2xl border-2 text-left transition flex flex-col justify-between relative ${
+                    theme === "dark"
+                      ? "border-sky-600 bg-sky-50/50 dark:bg-sky-950/40 ring-2 ring-sky-200 dark:ring-sky-800"
+                      : "border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:border-gray-300 dark:hover:border-slate-700"
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="p-2 rounded-xl bg-indigo-950 text-indigo-300 border border-indigo-800">
+                        <Moon className="w-5 h-5" />
+                      </div>
+                      {theme === "dark" && (
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-sky-600 text-white flex items-center space-x-1">
+                          <Check className="w-3 h-3" />
+                          <span>Active</span>
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="font-bold text-sm text-gray-900 dark:text-white">🌙 Dark Mode</h3>
+                    <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
+                      Deep slate background with bright, readable text. Relieves eyestrain and avoids glare.
+                    </p>
+                  </div>
+                </button>
+
+                {/* System Mode */}
+                <button
+                  type="button"
+                  onClick={() => setTheme("system")}
+                  className={`p-4 rounded-2xl border-2 text-left transition flex flex-col justify-between relative ${
+                    theme === "system"
+                      ? "border-sky-600 bg-sky-50/50 dark:bg-sky-950/40 ring-2 ring-sky-200 dark:ring-sky-800"
+                      : "border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:border-gray-300 dark:hover:border-slate-700"
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="p-2 rounded-xl bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300">
+                        <Laptop className="w-5 h-5" />
+                      </div>
+                      {theme === "system" && (
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-sky-600 text-white flex items-center space-x-1">
+                          <Check className="w-3 h-3" />
+                          <span>Active</span>
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="font-bold text-sm text-gray-900 dark:text-white">💻 System Sync</h3>
+                    <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
+                      Automatically matches your device&apos;s operating system light/dark schedule.
+                    </p>
+                  </div>
+                </button>
+              </div>
+
+              {/* Live Readability Verification Box */}
+              <div className="p-4 rounded-2xl border border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-800/60 space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-slate-400">
+                    Live Contrast &amp; Readability Check
+                  </h4>
+                  <span className="text-[11px] font-semibold text-sky-600 dark:text-sky-400">
+                    Currently displaying in {resolvedTheme.toUpperCase()} mode
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-gray-200 dark:border-slate-700 space-y-1">
+                    <span className="text-[10px] font-bold uppercase text-sky-600 dark:text-sky-400">Sample Category Card</span>
+                    <p className="text-xs font-bold text-gray-900 dark:text-white">Alex T. • Breakfast Report</p>
+                    <p className="text-xs text-gray-600 dark:text-slate-300">Ate all / ate well (High contrast text)</p>
+                  </div>
+                  <div className="bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-gray-200 dark:border-slate-700 space-y-1">
+                    <span className="text-[10px] font-bold uppercase text-emerald-600 dark:text-emerald-400">Sample Teacher Note</span>
+                    <p className="text-xs text-gray-700 dark:text-slate-200">
+                      &quot;Alex was engaged during morning speech session and participated happily.&quot;
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: EMAIL CONFIGURATION */}
         {activeTab === "email" && (
           <div className="space-y-6">
-            <div className="bg-white p-5 sm:p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
-              <h2 className="text-sm font-bold text-gray-900 flex items-center space-x-2">
-                <Mail className="w-4 h-4 text-sky-600" />
+            <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-xs space-y-4">
+              <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center space-x-2">
+                <Mail className="w-4 h-4 text-sky-600 dark:text-sky-400" />
                 <span>Email Sending Method</span>
               </h2>
 
@@ -583,12 +738,12 @@ function SettingsContent() {
                 <label
                   className={`p-4 rounded-2xl border cursor-pointer transition flex flex-col justify-between ${
                     state.settings.emailSettings.provider === "simulator"
-                      ? "bg-sky-50/50 border-sky-600 ring-2 ring-sky-300"
-                      : "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                      ? "bg-sky-50/50 dark:bg-sky-950/40 border-sky-600 dark:border-sky-500 ring-2 ring-sky-300 dark:ring-sky-800"
+                      : "bg-gray-50 dark:bg-slate-850 border-gray-200 dark:border-slate-800 hover:bg-gray-100 dark:hover:bg-slate-800"
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className="font-bold text-xs text-gray-900">
+                    <span className="font-bold text-xs text-gray-900 dark:text-white">
                       🧪 Test Simulator Mode
                     </span>
                     <input
@@ -611,7 +766,7 @@ function SettingsContent() {
                       className="text-sky-600"
                     />
                   </div>
-                  <p className="text-[11px] text-gray-500">
+                  <p className="text-[11px] text-gray-500 dark:text-slate-400">
                     Works instantly with zero setup. Simulates sending and logs output for review.
                   </p>
                 </label>
@@ -620,12 +775,12 @@ function SettingsContent() {
                 <label
                   className={`p-4 rounded-2xl border cursor-pointer transition flex flex-col justify-between ${
                     state.settings.emailSettings.provider === "gmail"
-                      ? "bg-sky-50/50 border-sky-600 ring-2 ring-sky-300"
-                      : "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                      ? "bg-sky-50/50 dark:bg-sky-950/40 border-sky-600 dark:border-sky-500 ring-2 ring-sky-300 dark:ring-sky-800"
+                      : "bg-gray-50 dark:bg-slate-850 border-gray-200 dark:border-slate-800 hover:bg-gray-100 dark:hover:bg-slate-800"
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className="font-bold text-xs text-gray-900">
+                    <span className="font-bold text-xs text-gray-900 dark:text-white">
                       ✉️ Gmail (App Password)
                     </span>
                     <input
@@ -648,7 +803,7 @@ function SettingsContent() {
                       className="text-sky-600"
                     />
                   </div>
-                  <p className="text-[11px] text-gray-500">
+                  <p className="text-[11px] text-gray-500 dark:text-slate-400">
                     Sends directly from your or Sara&apos;s personal Gmail address with 16-letter App Password.
                   </p>
                 </label>
@@ -657,12 +812,12 @@ function SettingsContent() {
                 <label
                   className={`p-4 rounded-2xl border cursor-pointer transition flex flex-col justify-between ${
                     state.settings.emailSettings.provider === "brevo"
-                      ? "bg-sky-50/50 border-sky-600 ring-2 ring-sky-300"
-                      : "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                      ? "bg-sky-50/50 dark:bg-sky-950/40 border-sky-600 dark:border-sky-500 ring-2 ring-sky-300 dark:ring-sky-800"
+                      : "bg-gray-50 dark:bg-slate-850 border-gray-200 dark:border-slate-800 hover:bg-gray-100 dark:hover:bg-slate-800"
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className="font-bold text-xs text-gray-900">
+                    <span className="font-bold text-xs text-gray-900 dark:text-white">
                       ⚡ Brevo API (Free Tier)
                     </span>
                     <input
@@ -685,7 +840,7 @@ function SettingsContent() {
                       className="text-sky-600"
                     />
                   </div>
-                  <p className="text-[11px] text-gray-500">
+                  <p className="text-[11px] text-gray-500 dark:text-slate-400">
                     Free 300 emails/day without sharing mailbox password.
                   </p>
                 </label>
@@ -694,7 +849,7 @@ function SettingsContent() {
               {/* Provider Config Inputs */}
               <div className="space-y-3 pt-2">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                  <label className="block text-xs font-bold text-gray-700 dark:text-slate-200 mb-1">
                     Teacher / Sender Display Name
                   </label>
                   <input
@@ -713,12 +868,12 @@ function SettingsContent() {
                       })
                     }
                     placeholder="Sara (Special Education Teacher)"
-                    className="w-full text-xs p-3 rounded-xl border border-gray-200 outline-none focus:border-sky-500"
+                    className="w-full text-xs p-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none focus:border-sky-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                  <label className="block text-xs font-bold text-gray-700 dark:text-slate-200 mb-1">
                     Gmail Address (for Sender &amp; Reply-To)
                   </label>
                   <input
@@ -737,13 +892,13 @@ function SettingsContent() {
                       })
                     }
                     placeholder="sara.specialed@gmail.com"
-                    className="w-full text-xs p-3 rounded-xl border border-gray-200 outline-none focus:border-sky-500 font-mono"
+                    className="w-full text-xs p-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none focus:border-sky-500 font-mono"
                   />
                 </div>
 
                 {state.settings.emailSettings.provider === "gmail" && (
-                  <div className="bg-sky-50 p-4 rounded-2xl border border-sky-200 space-y-2">
-                    <label className="block text-xs font-bold text-sky-900">
+                  <div className="bg-sky-50 dark:bg-sky-950/40 p-4 rounded-2xl border border-sky-200 dark:border-sky-800 space-y-2">
+                    <label className="block text-xs font-bold text-sky-900 dark:text-sky-200">
                       Google 16-Letter App Password
                     </label>
                     <input
@@ -762,9 +917,9 @@ function SettingsContent() {
                         })
                       }
                       placeholder="e.g. abcd efgh ijkl mnop"
-                      className="w-full text-xs p-3 rounded-xl border border-sky-300 outline-none focus:ring-2 focus:ring-sky-200 font-mono bg-white"
+                      className="w-full text-xs p-3 rounded-xl border border-sky-300 dark:border-sky-700 outline-none focus:ring-2 focus:ring-sky-200 font-mono bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                     />
-                    <p className="text-[11px] text-sky-800">
+                    <p className="text-[11px] text-sky-800 dark:text-sky-300">
                       💡 Generate at{" "}
                       <a
                         href="https://myaccount.google.com/apppasswords"
@@ -780,8 +935,8 @@ function SettingsContent() {
                 )}
 
                 {state.settings.emailSettings.provider === "brevo" && (
-                  <div className="bg-sky-50 p-4 rounded-2xl border border-sky-200 space-y-2">
-                    <label className="block text-xs font-bold text-sky-900">
+                  <div className="bg-sky-50 dark:bg-sky-950/40 p-4 rounded-2xl border border-sky-200 dark:border-sky-800 space-y-2">
+                    <label className="block text-xs font-bold text-sky-900 dark:text-sky-200">
                       Brevo API Key
                     </label>
                     <input
@@ -800,14 +955,14 @@ function SettingsContent() {
                         })
                       }
                       placeholder="xkeysib-..."
-                      className="w-full text-xs p-3 rounded-xl border border-sky-300 outline-none focus:ring-2 focus:ring-sky-200 font-mono bg-white"
+                      className="w-full text-xs p-3 rounded-xl border border-sky-300 dark:border-sky-700 outline-none focus:ring-2 focus:ring-sky-200 font-mono bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                     />
                   </div>
                 )}
 
                 {/* Master Summary Recipients */}
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                  <label className="block text-xs font-bold text-gray-700 dark:text-slate-200 mb-1">
                     Master Daily Summary Recipients (Sara + Admin Testing Emails)
                   </label>
                   <input
@@ -829,9 +984,9 @@ function SettingsContent() {
                       })
                     }
                     placeholder="sara-teacher@example.com, admin-test@example.com"
-                    className="w-full text-xs p-3 rounded-xl border border-gray-200 outline-none focus:border-sky-500 font-mono"
+                    className="w-full text-xs p-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none focus:border-sky-500 font-mono"
                   />
-                  <p className="text-[11px] text-gray-400 mt-1">
+                  <p className="text-[11px] text-gray-400 dark:text-slate-400 mt-1">
                     You can remove your testing email here once the system is fully validated.
                   </p>
                 </div>
@@ -840,17 +995,17 @@ function SettingsContent() {
           </div>
         )}
 
-        {/* TAB 4: PASSCODE & SECURITY */}
+        {/* TAB 5: PASSCODE & SECURITY */}
         {activeTab === "security" && (
           <div className="space-y-6">
-            <div className="bg-white p-5 sm:p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
-              <h2 className="text-sm font-bold text-gray-900 flex items-center space-x-2">
-                <Shield className="w-4 h-4 text-sky-600" />
+            <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-xs space-y-4">
+              <h2 className="text-sm font-bold text-gray-900 dark:text-white flex items-center space-x-2">
+                <Shield className="w-4 h-4 text-sky-600 dark:text-sky-400" />
                 <span>Passcode &amp; Device Persistence</span>
               </h2>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">
+                <label className="block text-xs font-bold text-gray-700 dark:text-slate-200 mb-1">
                   Classroom Passcode
                 </label>
                 <input
@@ -865,22 +1020,22 @@ function SettingsContent() {
                       },
                     })
                   }
-                  className="w-full text-xs p-3 rounded-xl border border-gray-200 outline-none focus:border-sky-500 font-mono max-w-sm"
+                  className="w-full text-xs p-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none focus:border-sky-500 font-mono max-w-sm"
                 />
-                <p className="text-[11px] text-gray-400 mt-1">
+                <p className="text-[11px] text-gray-400 dark:text-slate-400 mt-1">
                   Recognized phones and laptops stay unlocked for 30 days.
                 </p>
               </div>
 
               {/* Sample Data Reset */}
-              <div className="pt-4 border-t border-gray-100">
-                <h3 className="text-xs font-bold text-gray-700 mb-1">
+              <div className="pt-4 border-t border-gray-100 dark:border-slate-800">
+                <h3 className="text-xs font-bold text-gray-700 dark:text-slate-200 mb-1">
                   Testing / Sample Sandbox Data
                 </h3>
                 <button
                   type="button"
                   onClick={handleResetToSampleData}
-                  className="px-3.5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition"
+                  className="px-3.5 py-2 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-200 text-xs font-bold rounded-xl transition"
                 >
                   Reload 3 Sample Students &amp; Categories
                 </button>

@@ -74,23 +74,23 @@ export function NotesSection({
   };
 
   return (
-    <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-sm space-y-4">
-      <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-        <h3 className="font-bold text-gray-800 text-sm flex items-center space-x-2">
+    <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-xs space-y-4 transition-colors">
+      <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-2">
+        <h3 className="font-bold text-gray-800 dark:text-slate-100 text-sm flex items-center space-x-2">
           <span>📝 Daily Teacher Notes</span>
         </h3>
         {speechSupported ? (
-          <span className="text-xs text-emerald-600 flex items-center space-x-1 font-medium">
+          <span className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center space-x-1 font-medium">
             <Volume2 className="w-3.5 h-3.5" />
             <span>Voice Dictation Ready</span>
           </span>
         ) : (
-          <span className="text-xs text-gray-400">Typing Mode</span>
+          <span className="text-xs text-gray-400 dark:text-slate-500">Typing Mode</span>
         )}
       </div>
 
       {speechError && (
-        <div className="bg-rose-50 text-rose-700 text-xs p-2.5 rounded-xl flex items-center space-x-2 border border-rose-200">
+        <div className="bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 text-xs p-2.5 rounded-xl flex items-center space-x-2 border border-rose-200 dark:border-rose-800">
           <AlertCircle className="w-4 h-4 flex-shrink-0" />
           <span>{speechError}</span>
         </div>
@@ -99,8 +99,8 @@ export function NotesSection({
       {/* Notes 1 */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <label className="text-xs font-bold text-gray-700">
-            Notes 1 (General Day, Activities & Highlights)
+          <label className="text-xs font-bold text-gray-700 dark:text-slate-200">
+            Notes 1 (General Day, Activities &amp; Highlights)
           </label>
           {speechSupported && (
             <button
@@ -111,7 +111,7 @@ export function NotesSection({
               className={`flex items-center space-x-1 text-xs px-2.5 py-1 rounded-lg font-medium transition ${
                 activeRecordingField === 1
                   ? "bg-rose-500 text-white animate-pulse"
-                  : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                  : "bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-200"
               }`}
             >
               {activeRecordingField === 1 ? (
@@ -121,7 +121,7 @@ export function NotesSection({
                 </>
               ) : (
                 <>
-                  <Mic className="w-3.5 h-3.5 text-sky-600" />
+                  <Mic className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
                   <span>Voice Dictate</span>
                 </>
               )}
@@ -133,14 +133,14 @@ export function NotesSection({
           value={notes1}
           onChange={(e) => onChangeNotes1(e.target.value)}
           placeholder="e.g. Alex had a great speech therapy session today. Played nicely during free play..."
-          className="w-full text-sm p-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none transition"
+          className="w-full text-sm p-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-900 focus:border-sky-500 dark:focus:border-sky-400 focus:ring-2 focus:ring-sky-200 dark:focus:ring-sky-900/50 placeholder-gray-400 dark:placeholder-slate-500 outline-none transition"
         />
       </div>
 
       {/* Notes 2 */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <label className="text-xs font-bold text-gray-700">
+          <label className="text-xs font-bold text-gray-700 dark:text-slate-200">
             Notes 2 (Reminders, Supplies, or Special Follow-ups)
           </label>
           {speechSupported && (
@@ -152,7 +152,7 @@ export function NotesSection({
               className={`flex items-center space-x-1 text-xs px-2.5 py-1 rounded-lg font-medium transition ${
                 activeRecordingField === 2
                   ? "bg-rose-500 text-white animate-pulse"
-                  : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                  : "bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-200"
               }`}
             >
               {activeRecordingField === 2 ? (
@@ -162,7 +162,7 @@ export function NotesSection({
                 </>
               ) : (
                 <>
-                  <Mic className="w-3.5 h-3.5 text-sky-600" />
+                  <Mic className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
                   <span>Voice Dictate</span>
                 </>
               )}
@@ -174,7 +174,7 @@ export function NotesSection({
           value={notes2}
           onChange={(e) => onChangeNotes2(e.target.value)}
           placeholder="e.g. Please send extra change of clothes tomorrow. Reminder: Early dismissal on Friday..."
-          className="w-full text-sm p-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none transition"
+          className="w-full text-sm p-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-900 focus:border-sky-500 dark:focus:border-sky-400 focus:ring-2 focus:ring-sky-200 dark:focus:ring-sky-900/50 placeholder-gray-400 dark:placeholder-slate-500 outline-none transition"
         />
       </div>
     </div>
