@@ -224,6 +224,11 @@ export async function POST(req: NextRequest) {
       (e) => (e.notes1 && e.notes1.trim().length > 0) || (e.notes2 && e.notes2.trim().length > 0)
     );
 
+    // Guard against corrupted future timestamps (e.g. from tests or clock drift)
+    if (existingState?.updatedAt && existingState.updatedAt > Date.now() + 86400000) {
+      existingState.updatedAt = 0;
+    }
+
     // Guard against stale clients overwriting newer server data unless force is explicitly set
     if (
       !isForce &&

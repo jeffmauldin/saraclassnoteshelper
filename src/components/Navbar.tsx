@@ -143,7 +143,7 @@ export function Navbar({
         <div className="flex items-center space-x-2">
           {/* Sync Button & Status (Push) */}
           <button
-            onClick={onManualSync}
+            onClick={() => onManualSync()}
             title="Click to sync data with cloud/other devices"
             className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${
               syncStatus === "saved"
@@ -170,7 +170,7 @@ export function Navbar({
           {/* Pull Cloud Button */}
           {onPullCloud && (
             <button
-              onClick={onPullCloud}
+              onClick={() => onPullCloud()}
               disabled={isPulling}
               title="Pull latest notes from cloud / other devices"
               className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-sky-200 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-900/40 transition disabled:opacity-50 disabled:cursor-not-allowed"
