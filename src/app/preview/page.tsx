@@ -57,7 +57,7 @@ function PreviewContent() {
   const masterEmail = formatMasterSummaryEmail(state, state.currentDate);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-16 transition-colors">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-16">
       {/* Header */}
       <header className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 sticky top-0 z-30 shadow-xs">
         <div className="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
@@ -173,7 +173,7 @@ function PreviewContent() {
 
         {/* Preview Content Box */}
         {selectedPreviewTab === "master" ? (
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-xs p-6 space-y-4 transition-colors">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-xs p-6 space-y-4">
             <div className="border-b border-gray-100 dark:border-slate-800 pb-3 space-y-1">
               <p className="text-xs font-bold text-gray-400 dark:text-slate-400 uppercase">Subject</p>
               <p className="text-sm font-black text-gray-900 dark:text-white">{masterEmail.subject}</p>
@@ -202,7 +202,7 @@ function PreviewContent() {
             );
 
             return (
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-xs p-6 space-y-4 transition-colors">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-xs p-6 space-y-4">
                 <div className="border-b border-gray-100 dark:border-slate-800 pb-3 space-y-1">
                   <p className="text-xs font-bold text-gray-400 dark:text-slate-400 uppercase">Subject</p>
                   <p className="text-sm font-black text-gray-900 dark:text-white">{studentEmail.subject}</p>

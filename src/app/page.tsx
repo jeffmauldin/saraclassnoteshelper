@@ -41,7 +41,13 @@ function DailyDashboardContent() {
     }
     return getInitialStateForClassroom(activeClassroomId);
   });
-  const [selectedStudentId, setSelectedStudentId] = useState<string>("");
+  const [selectedStudentId, setSelectedStudentId] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      const local = loadLocalState(activeClassroomId);
+      return local.students[0]?.id || "";
+    }
+    return getInitialStateForClassroom(activeClassroomId).students[0]?.id || "";
+  });
   const [syncStatus, setSyncStatus] = useState<"saved" | "unsaved" | "syncing" | "error">("saved");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -369,7 +375,7 @@ function DailyDashboardContent() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col pb-12 bg-slate-50 dark:bg-slate-950 transition-colors">
+    <div className="min-h-screen flex flex-col pb-12 bg-slate-50 dark:bg-slate-950">
       {/* Navigation Header */}
       <Navbar
         currentDate={state.currentDate}

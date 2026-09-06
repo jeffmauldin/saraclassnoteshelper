@@ -226,7 +226,7 @@ function SettingsContent() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-16 transition-colors">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-16">
       {/* Header */}
       <header className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 sticky top-0 z-30 shadow-xs">
         <div className="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
@@ -594,7 +594,7 @@ function SettingsContent() {
         {/* TAB 3: APPEARANCE & THEME */}
         {activeTab === "appearance" && (
           <div className="space-y-6">
-            <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-xs space-y-5 transition-colors">
+            <div className="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-xs space-y-5">
               <div>
                 <h2 className="text-base font-bold text-gray-900 dark:text-white flex items-center space-x-2">
                   <Palette className="w-5 h-5 text-sky-600 dark:text-sky-400" />

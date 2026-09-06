@@ -74,7 +74,7 @@ export function NotesSection({
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-xs space-y-4 transition-colors">
+    <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-gray-200 dark:border-slate-800 shadow-xs space-y-4">
       <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-2">
         <h3 className="font-bold text-gray-800 dark:text-slate-100 text-sm flex items-center space-x-2">
           <span>📝 Daily Teacher Notes</span>
@@ -133,7 +133,7 @@ export function NotesSection({
           value={notes1}
           onChange={(e) => onChangeNotes1(e.target.value)}
           placeholder="e.g. Alex had a great speech therapy session today. Played nicely during free play..."
-          className="w-full text-sm p-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-900 focus:border-sky-500 dark:focus:border-sky-400 focus:ring-2 focus:ring-sky-200 dark:focus:ring-sky-900/50 placeholder-gray-400 dark:placeholder-slate-500 outline-none transition"
+          className="w-full text-sm p-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-900 focus:border-sky-500 dark:focus:border-sky-400 focus:ring-2 focus:ring-sky-200 dark:focus:ring-sky-900/50 placeholder-gray-400 dark:placeholder-slate-500 outline-none transition"
         />
       </div>
 
@@ -174,7 +174,7 @@ export function NotesSection({
           value={notes2}
           onChange={(e) => onChangeNotes2(e.target.value)}
           placeholder="e.g. Please send extra change of clothes tomorrow. Reminder: Early dismissal on Friday..."
-          className="w-full text-sm p-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-900 focus:border-sky-500 dark:focus:border-sky-400 focus:ring-2 focus:ring-sky-200 dark:focus:ring-sky-900/50 placeholder-gray-400 dark:placeholder-slate-500 outline-none transition"
+          className="w-full text-sm p-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-900 focus:border-sky-500 dark:focus:border-sky-400 focus:ring-2 focus:ring-sky-200 dark:focus:ring-sky-900/50 placeholder-gray-400 dark:placeholder-slate-500 outline-none transition"
         />
       </div>
     </div>

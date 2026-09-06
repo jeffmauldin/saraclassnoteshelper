@@ -160,7 +160,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   if (!session?.authenticated) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4 transition-colors">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 shadow-xl border border-gray-100 dark:border-slate-800">
           <div className="flex flex-col items-center text-center mb-6">
             <div className="bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 p-4 rounded-3xl mb-3 shadow-inner">

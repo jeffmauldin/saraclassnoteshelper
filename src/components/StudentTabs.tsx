@@ -18,7 +18,7 @@ export function StudentTabs({
   entries,
 }: StudentTabsProps) {
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-2xl p-3 border border-gray-200 dark:border-slate-800 shadow-xs transition-colors">
+    <div className="bg-white dark:bg-slate-900 rounded-2xl p-3 border border-gray-200 dark:border-slate-800 shadow-xs">
       <div className="flex items-center justify-between mb-2 px-1">
         <span className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wider">
           Students ({students.length})
@@ -42,7 +42,7 @@ export function StudentTabs({
               className={`flex flex-col items-start p-3 rounded-xl text-left border transition relative ${
                 isSelected
                   ? "bg-sky-600 text-white border-sky-600 shadow-md ring-2 ring-sky-300 dark:ring-sky-500/50"
-                  : "bg-gray-50 dark:bg-slate-800/80 hover:bg-gray-100 dark:hover:bg-slate-800 text-gray-800 dark:text-slate-200 border-gray-200 dark:border-slate-700"
+                  : "bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-800 dark:text-slate-200 border-gray-200 dark:border-slate-700"
               }`}
             >
               <div className="flex items-center justify-between w-full mb-1">

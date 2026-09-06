@@ -44,13 +44,13 @@ export function ActionPanel({
   )}&body=${encodeURIComponent(mailtoData.text)}`;
 
   return (
-    <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-xs space-y-4 transition-colors">
+    <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-xs space-y-4">
       {/* Sent Status Banner */}
       <div
         className={`p-3.5 rounded-2xl flex items-center justify-between border transition ${
           isAlreadySentToday
             ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300"
-            : "bg-gray-50 dark:bg-slate-800/80 border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-200"
+            : "bg-gray-50 dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-200"
         }`}
       >
         <div className="flex items-center space-x-2.5">

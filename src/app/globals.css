@@ -5,10 +5,36 @@
 :root {
   --foreground-rgb: 15, 23, 42;
   --background-rgb: 248, 250, 252;
+  color-scheme: light;
+}
+
+html.dark {
+  --foreground-rgb: 248, 250, 252;
+  --background-rgb: 2, 6, 23;
+  color-scheme: dark;
 }
 
 body {
   color: rgb(var(--foreground-rgb));
   background-color: rgb(var(--background-rgb));
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+/* Eliminate native select/option/input white flash in dark mode */
+html.dark select,
+html.dark option,
+html.dark optgroup,
+html.dark input,
+html.dark textarea {
+  color-scheme: dark;
+  background-color: #1e293b;
+  color: #f8fafc;
+}
+
+html:not(.dark) select,
+html:not(.dark) option,
+html:not(.dark) optgroup {
+  color-scheme: light;
+  background-color: #ffffff;
+  color: #0f172a;
 }
