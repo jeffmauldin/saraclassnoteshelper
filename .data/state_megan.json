@@ -1,0 +1,250 @@
+{
+  "classroomId": "megan",
+  "students": [
+    {
+      "id": "megan-1",
+      "name": "Maya L.",
+      "parentNames": "Long Family (Demo)",
+      "emails": [
+        "mauldinjeff+megan-maya@gmail.com"
+      ]
+    },
+    {
+      "id": "megan-2",
+      "name": "Lucas R.",
+      "parentNames": "Rivera Family (Demo)",
+      "emails": [
+        "mauldinjeff+megan-lucas@gmail.com"
+      ]
+    },
+    {
+      "id": "megan-3",
+      "name": "Emma W.",
+      "parentNames": "Watson Family (Demo)",
+      "emails": [
+        "mauldinjeff+megan-emma@gmail.com"
+      ]
+    }
+  ],
+  "categories": [
+    {
+      "id": "cat-megan-highlights",
+      "name": "Academic Highlights & Focus",
+      "defaultOptionId": "opt-mh-none",
+      "options": [
+        {
+          "id": "opt-mh-none",
+          "label": "No report"
+        },
+        {
+          "id": "opt-mh-reading",
+          "label": "Reading & phonics comprehension"
+        },
+        {
+          "id": "opt-mh-math",
+          "label": "Math problem solving & calculations"
+        },
+        {
+          "id": "opt-mh-writing",
+          "label": "Creative writing & handwriting"
+        },
+        {
+          "id": "opt-mh-science",
+          "label": "Science & hands-on exploration"
+        }
+      ]
+    },
+    {
+      "id": "cat-megan-social",
+      "name": "Social & Group Participation",
+      "defaultOptionId": "opt-ms-none",
+      "options": [
+        {
+          "id": "opt-ms-none",
+          "label": "No report"
+        },
+        {
+          "id": "opt-ms-coop",
+          "label": "Highly cooperative & helpful friend"
+        },
+        {
+          "id": "opt-ms-active",
+          "label": "Active contributor in discussions"
+        },
+        {
+          "id": "opt-ms-quiet",
+          "label": "Focused quietly on independent work"
+        },
+        {
+          "id": "opt-ms-encouraged",
+          "label": "Needed encouraging prompt to share"
+        }
+      ]
+    },
+    {
+      "id": "cat-megan-reading",
+      "name": "Daily Goals & Progress - Reading",
+      "defaultOptionId": "opt-mr-none",
+      "options": [
+        {
+          "id": "opt-mr-none",
+          "label": "No report"
+        },
+        {
+          "id": "opt-mr-met",
+          "label": "Met target reading objective"
+        },
+        {
+          "id": "opt-mr-steady",
+          "label": "Steady progress on reading goal"
+        },
+        {
+          "id": "opt-mr-prompt",
+          "label": "Practiced reading with guided support"
+        },
+        {
+          "id": "opt-mr-foundational",
+          "label": "Reviewing foundational sight words/phonics"
+        }
+      ]
+    },
+    {
+      "id": "cat-megan-math",
+      "name": "Daily Goals & Progress - Math",
+      "defaultOptionId": "opt-mm-none",
+      "options": [
+        {
+          "id": "opt-mm-none",
+          "label": "No report"
+        },
+        {
+          "id": "opt-mm-met",
+          "label": "Met target math objective"
+        },
+        {
+          "id": "opt-mm-steady",
+          "label": "Steady progress on math goal"
+        },
+        {
+          "id": "opt-mm-manip",
+          "label": "Practiced math with manipulatives"
+        },
+        {
+          "id": "opt-mm-foundational",
+          "label": "Reviewing foundational math skills"
+        }
+      ]
+    },
+    {
+      "id": "cat-megan-other",
+      "name": "Daily Goals & Progress - Other",
+      "defaultOptionId": "opt-mo-none",
+      "options": [
+        {
+          "id": "opt-mo-none",
+          "label": "No report"
+        },
+        {
+          "id": "opt-mo-met",
+          "label": "Met individualized target objective"
+        },
+        {
+          "id": "opt-mo-steady",
+          "label": "Steady progress on individualized goal"
+        },
+        {
+          "id": "opt-mo-support",
+          "label": "Working with teacher assistance"
+        },
+        {
+          "id": "opt-mo-none-today",
+          "label": "Goal area not scheduled today"
+        }
+      ]
+    },
+    {
+      "id": "cat-megan-specials",
+      "name": "Special Activities",
+      "defaultOptionId": "opt-msp-none",
+      "options": [
+        {
+          "id": "opt-msp-none",
+          "label": "No report"
+        },
+        {
+          "id": "opt-msp-art",
+          "label": "Art & Music class"
+        },
+        {
+          "id": "opt-msp-pe",
+          "label": "Physical Education / Recess"
+        },
+        {
+          "id": "opt-msp-library",
+          "label": "Library / Media time"
+        },
+        {
+          "id": "opt-msp-sensory",
+          "label": "Sensory & Free Choice"
+        }
+      ]
+    }
+  ],
+  "entries": {
+    "megan-1": {
+      "studentId": "megan-1",
+      "selections": {
+        "cat-megan-highlights": "opt-mh-none",
+        "cat-megan-social": "opt-ms-active",
+        "cat-megan-reading": "opt-mr-none",
+        "cat-megan-math": "opt-mm-none",
+        "cat-megan-other": "opt-mo-none",
+        "cat-megan-specials": "opt-msp-none"
+      },
+      "notes1": "",
+      "notes2": ""
+    },
+    "megan-2": {
+      "studentId": "megan-2",
+      "selections": {
+        "cat-megan-highlights": "opt-mh-none",
+        "cat-megan-social": "opt-ms-none",
+        "cat-megan-reading": "opt-mr-none",
+        "cat-megan-math": "opt-mm-none",
+        "cat-megan-other": "opt-mo-none",
+        "cat-megan-specials": "opt-msp-none"
+      },
+      "notes1": "",
+      "notes2": ""
+    },
+    "megan-3": {
+      "studentId": "megan-3",
+      "selections": {
+        "cat-megan-highlights": "opt-mh-none",
+        "cat-megan-social": "opt-ms-none",
+        "cat-megan-reading": "opt-mr-none",
+        "cat-megan-math": "opt-mm-none",
+        "cat-megan-other": "opt-mo-none",
+        "cat-megan-specials": "opt-msp-none"
+      },
+      "notes1": "",
+      "notes2": ""
+    }
+  },
+  "currentDate": "2026-09-03",
+  "sentDate": null,
+  "lastResetDate": "2026-09-03",
+  "settings": {
+    "passphrase": "megan2026",
+    "emailSettings": {
+      "provider": "simulator",
+      "gmailUser": "mauldinjeff@gmail.com",
+      "gmailAppPassword": "",
+      "brevoApiKey": "",
+      "fromName": "Megan (Special Education Teacher)",
+      "masterRecipients": [
+        "mauldinjeff+megan-master@gmail.com"
+      ]
+    }
+  }
+}

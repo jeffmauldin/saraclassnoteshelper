@@ -98,9 +98,21 @@ export function loadLocalState(classroomId?: ClassroomId): AppState {
 
     if (!raw) return baseInitial;
     const parsed = JSON.parse(raw);
-    return {
+
+    const students =
+      Array.isArray(parsed.students) && parsed.students.length > 0
+        ? parsed.students
+        : baseInitial.students;
+    const categories =
+      Array.isArray(parsed.categories) && parsed.categories.length > 0
+        ? parsed.categories
+        : baseInitial.categories;
+
+    const state: AppState = {
       ...baseInitial,
       ...parsed,
+      students,
+      categories,
       classroomId: cid,
       settings: {
         ...baseInitial.settings,
@@ -111,6 +123,18 @@ export function loadLocalState(classroomId?: ClassroomId): AppState {
         },
       },
     };
+
+    // If local storage had empty students or categories, heal it immediately
+    if (
+      !Array.isArray(parsed.students) ||
+      parsed.students.length === 0 ||
+      !Array.isArray(parsed.categories) ||
+      parsed.categories.length === 0
+    ) {
+      saveLocalState(state, cid);
+    }
+
+    return state;
   } catch (e) {
     console.error(`Failed to load local state for ${cid}:`, e);
     return baseInitial;
@@ -137,6 +161,7 @@ export function saveLocalState(state: AppState, classroomId?: ClassroomId): void
 
 export async function fetchServerState(classroomId?: ClassroomId): Promise<AppState | null> {
   const cid: ClassroomId = classroomId || getActiveClassroomId();
+  const baseInitial = getInitialStateForClassroom(cid);
   try {
     const res = await fetch(`/api/data?classroom=${cid}`, { cache: "no-store" });
     if (!res.ok) return null;
@@ -154,7 +179,24 @@ export async function fetchServerState(classroomId?: ClassroomId): Promise<AppSt
       return localState;
     }
 
-    const serverState = data.state as AppState;
+    const rawServerState = data.state as AppState;
+    const serverStudents =
+      Array.isArray(rawServerState.students) && rawServerState.students.length > 0
+        ? rawServerState.students
+        : baseInitial.students;
+    const serverCategories =
+      Array.isArray(rawServerState.categories) && rawServerState.categories.length > 0
+        ? rawServerState.categories
+        : baseInitial.categories;
+
+    const serverState: AppState = {
+      ...baseInitial,
+      ...rawServerState,
+      students: serverStudents,
+      categories: serverCategories,
+      classroomId: cid,
+    };
+
     const serverTime = serverState.updatedAt || 0;
     const localTime = localState.updatedAt || 0;
 
@@ -277,15 +319,26 @@ export async function pullServerState(
   options?: PullOptions
 ): Promise<PullResult> {
   const cid: ClassroomId = classroomId || getActiveClassroomId();
+  const baseInitial = getInitialStateForClassroom(cid);
   try {
-    const res = await fetch(`/api/data?classroom=${cid}`, { cache: "no-store" });
+    let res: Response;
+    try {
+      res = await fetch(`/api/data?classroom=${cid}`, { cache: "no-store" });
+    } catch (netErr: any) {
+      return {
+        status: "offline",
+        message: "Could not reach cloud (offline).",
+      };
+    }
+
     if (!res.ok) {
       return {
         status: "offline",
-        message: "Could not reach the server to check for updates.",
+        message: `Server returned status (${res.status}). Notes saved locally.`,
       };
     }
-    const data = await res.json();
+
+    const data = await res.json().catch(() => null);
     if (!data || !data.hasSavedState || !data.state) {
       return {
         status: "server_empty",
@@ -293,7 +346,24 @@ export async function pullServerState(
       };
     }
 
-    const serverState = data.state as AppState;
+    const rawServerState = data.state as AppState;
+    const serverStudents =
+      Array.isArray(rawServerState.students) && rawServerState.students.length > 0
+        ? rawServerState.students
+        : baseInitial.students;
+    const serverCategories =
+      Array.isArray(rawServerState.categories) && rawServerState.categories.length > 0
+        ? rawServerState.categories
+        : baseInitial.categories;
+
+    const serverState: AppState = {
+      ...baseInitial,
+      ...rawServerState,
+      students: serverStudents,
+      categories: serverCategories,
+      classroomId: cid,
+    };
+
     const localState = loadLocalState(cid);
     const serverTime = serverState.updatedAt || 0;
     const localTime = localState.updatedAt || 0;

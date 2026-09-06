@@ -21,6 +21,29 @@ function getClassroomFilePath(classroomId: ClassroomId): string {
   return path.join(getDataDir(), `state_${classroomId}.json`);
 }
 
+function hydrateState(raw: any, initial: AppState, classroomId: ClassroomId): AppState {
+  const students =
+    Array.isArray(raw?.students) && raw.students.length > 0 ? raw.students : initial.students;
+  const categories =
+    Array.isArray(raw?.categories) && raw.categories.length > 0 ? raw.categories : initial.categories;
+
+  return {
+    ...initial,
+    ...(raw || {}),
+    students,
+    categories,
+    classroomId,
+    settings: {
+      ...initial.settings,
+      ...(raw?.settings || {}),
+      emailSettings: {
+        ...initial.settings.emailSettings,
+        ...(raw?.settings?.emailSettings || {}),
+      },
+    },
+  };
+}
+
 function readDiskState(classroomId: ClassroomId): AppState | null {
   const initial = getInitialStateForClassroom(classroomId);
   const primaryPath = getClassroomFilePath(classroomId);
@@ -33,19 +56,7 @@ function readDiskState(classroomId: ClassroomId): AppState | null {
       const content = fs.readFileSync(primaryPath, "utf-8");
       if (content.trim()) {
         const parsed = JSON.parse(content);
-        return {
-          ...initial,
-          ...parsed,
-          classroomId,
-          settings: {
-            ...initial.settings,
-            ...(parsed.settings || {}),
-            emailSettings: {
-              ...initial.settings.emailSettings,
-              ...(parsed.settings?.emailSettings || {}),
-            },
-          },
-        };
+        return hydrateState(parsed, initial, classroomId);
       }
     }
 
@@ -54,19 +65,7 @@ function readDiskState(classroomId: ClassroomId): AppState | null {
       const content = fs.readFileSync(repoPath, "utf-8");
       if (content.trim()) {
         const parsed = JSON.parse(content);
-        return {
-          ...initial,
-          ...parsed,
-          classroomId,
-          settings: {
-            ...initial.settings,
-            ...(parsed.settings || {}),
-            emailSettings: {
-              ...initial.settings.emailSettings,
-              ...(parsed.settings?.emailSettings || {}),
-            },
-          },
-        };
+        return hydrateState(parsed, initial, classroomId);
       }
     }
 
@@ -75,19 +74,7 @@ function readDiskState(classroomId: ClassroomId): AppState | null {
       const content = fs.readFileSync(legacyRepoPath, "utf-8");
       if (content.trim()) {
         const parsed = JSON.parse(content);
-        return {
-          ...initial,
-          ...parsed,
-          classroomId: "sara",
-          settings: {
-            ...initial.settings,
-            ...(parsed.settings || {}),
-            emailSettings: {
-              ...initial.settings.emailSettings,
-              ...(parsed.settings?.emailSettings || {}),
-            },
-          },
-        };
+        return hydrateState(parsed, initial, "sara");
       }
     }
   } catch (e) {
@@ -124,19 +111,7 @@ async function readSavedState(
     const cloudState = await getCloudState(classroomId);
     if (cloudState) {
       return {
-        state: {
-          ...initial,
-          ...cloudState,
-          classroomId,
-          settings: {
-            ...initial.settings,
-            ...(cloudState.settings || {}),
-            emailSettings: {
-              ...initial.settings.emailSettings,
-              ...(cloudState.settings?.emailSettings || {}),
-            },
-          },
-        },
+        state: hydrateState(cloudState, initial, classroomId),
         hasSavedState: true,
       };
     }
@@ -148,7 +123,7 @@ async function readSavedState(
       return { state: diskFallback, hasSavedState: true };
     }
 
-    return { state: null, hasSavedState: false };
+    return { state: initial, hasSavedState: false };
   }
 
   const diskState = readDiskState(classroomId);
@@ -156,7 +131,7 @@ async function readSavedState(
     return { state: diskState, hasSavedState: true };
   }
 
-  return { state: null, hasSavedState: false };
+  return { state: initial, hasSavedState: false };
 }
 
 async function writeSavedState(state: AppState, classroomId: ClassroomId): Promise<void> {
@@ -174,20 +149,33 @@ async function writeSavedState(state: AppState, classroomId: ClassroomId): Promi
 }
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const classroomId = normalizeClassroomId(searchParams.get("classroom"));
-  const { state, hasSavedState } = await readSavedState(classroomId);
-  const cloudActive = isCloudStorageConfigured();
-  const fallbackState = getInitialStateForClassroom(classroomId);
+  try {
+    const { searchParams } = new URL(req.url);
+    const classroomId = normalizeClassroomId(searchParams.get("classroom"));
+    const { state, hasSavedState } = await readSavedState(classroomId);
+    const cloudActive = isCloudStorageConfigured();
+    const fallbackState = getInitialStateForClassroom(classroomId);
 
-  return NextResponse.json({
-    state: state || fallbackState,
-    hasSavedState,
-    storage: {
-      mode: cloudActive ? "cloud" : "local",
-      cloudConfigured: cloudActive,
-    },
-  });
+    return NextResponse.json({
+      state: state || fallbackState,
+      hasSavedState: Boolean(hasSavedState && state),
+      storage: {
+        mode: cloudActive ? "cloud" : "local",
+        cloudConfigured: cloudActive,
+      },
+    });
+  } catch (err: any) {
+    console.error("GET /api/data error:", err);
+    const fallbackState = getInitialStateForClassroom("sara");
+    return NextResponse.json({
+      state: fallbackState,
+      hasSavedState: false,
+      storage: {
+        mode: "local",
+        cloudConfigured: false,
+      },
+    });
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -200,13 +188,13 @@ export async function POST(req: NextRequest) {
     const classroomId = normalizeClassroomId(
       body.state.classroomId || searchParams.get("classroom")
     );
-    const toSave: AppState = {
-      ...body.state,
-      classroomId,
-      updatedAt: body.state.updatedAt || Date.now(),
-    };
-
+    const initial = getInitialStateForClassroom(classroomId);
     const { state: existingState } = await readSavedState(classroomId);
+
+    // Hydrate toSave so students and categories are never empty arrays
+    const toSave: AppState = hydrateState(body.state, existingState || initial, classroomId);
+    toSave.updatedAt = body.state.updatedAt || Date.now();
+
     const isForce = body.force === true || searchParams.get("force") === "true";
 
     const areEntriesIdentical =
@@ -231,6 +219,11 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Check if client has actual typed notes
+    const clientHasEdits = Object.values(toSave.entries || {}).some(
+      (e) => (e.notes1 && e.notes1.trim().length > 0) || (e.notes2 && e.notes2.trim().length > 0)
+    );
+
     // Guard against stale clients overwriting newer server data unless force is explicitly set
     if (
       !isForce &&
@@ -240,6 +233,20 @@ export async function POST(req: NextRequest) {
       toSave.updatedAt &&
       toSave.updatedAt < existingState.updatedAt
     ) {
+      // If client has NO actual edits and server has newer notes,
+      // allow client to gracefully adopt server state without throwing conflict
+      if (!clientHasEdits) {
+        const cloudActive = isCloudStorageConfigured();
+        return NextResponse.json({
+          success: true,
+          state: existingState,
+          storage: {
+            mode: cloudActive ? "cloud" : "local",
+            cloudConfigured: cloudActive,
+          },
+        });
+      }
+
       return NextResponse.json(
         {
           success: false,

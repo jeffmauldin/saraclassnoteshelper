@@ -114,6 +114,10 @@ function SettingsContent() {
   };
 
   const handleDeleteStudent = (studentId: string) => {
+    if (state.students.length <= 1) {
+      alert("A classroom must have at least one student.");
+      return;
+    }
     if (!confirm("Are you sure you want to remove this student?")) return;
     const updatedStudents = state.students.filter((s) => s.id !== studentId);
     const updated: AppState = {
