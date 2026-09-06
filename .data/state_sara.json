@@ -1,4 +1,5 @@
 {
+  "classroomId": "sara",
   "students": [
     {
       "id": "student-1",
@@ -162,7 +163,7 @@
     "student-1": {
       "studentId": "student-1",
       "selections": {
-        "cat-breakfast": "opt-bk-none",
+        "cat-breakfast": "opt-bk-none-ate",
         "cat-rest": "opt-rest-none",
         "cat-behavior": "opt-beh-none",
         "cat-therapy": "opt-th-none",
@@ -196,9 +197,10 @@
       "notes2": ""
     }
   },
-  "currentDate": "2026-09-03",
+  "currentDate": "2026-09-06",
   "sentDate": null,
   "lastResetDate": "2026-09-03",
+  "updatedAt": 1788686452541,
   "settings": {
     "passphrase": "sara2026",
     "emailSettings": {
@@ -212,7 +214,5 @@
         "my-test-email@example.com"
       ]
     }
-  },
-  "classroomId": "sara",
-  "updatedAt": 0
+  }
 }
