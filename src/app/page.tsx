@@ -20,6 +20,7 @@ import {
   saveLocalState,
   fetchServerState,
   syncStateToServer,
+  syncStateToServerDetailed,
   pullServerState,
 } from "@/lib/storage";
 import { AppState, SendResult } from "@/lib/types";
@@ -131,19 +132,6 @@ function DailyDashboardContent() {
     [activeClassroomId]
   );
 
-  // Manual or automatic cloud sync
-  const triggerSync = async (force = false) => {
-    setSyncStatus("syncing");
-    const ok = await syncStateToServer(state, activeClassroomId, force);
-    if (ok) {
-      setSyncStatus("saved");
-      showToast("All changes saved to cloud!");
-    } else {
-      setSyncStatus("error");
-      showToast("Saved locally (cloud sync offline or newer cloud notes exist)");
-    }
-  };
-
   // Manual pull from cloud
   const handleManualPull = async (force = false) => {
     setIsPulling(true);
@@ -163,6 +151,7 @@ function DailyDashboardContent() {
         setShowConflictModal(false);
         showToast(res.message || "Loaded latest notes from cloud!");
       } else if (res.status === "up_to_date") {
+        setSyncStatus("saved");
         showToast(res.message || "Already up to date with cloud.");
       } else if (res.status === "conflict_unsaved") {
         setShowConflictModal(true);
@@ -175,6 +164,31 @@ function DailyDashboardContent() {
       showToast("Failed to pull from cloud.");
     } finally {
       setIsPulling(false);
+    }
+  };
+
+  // Manual or automatic cloud sync
+  const triggerSync = async (force = false) => {
+    setSyncStatus("syncing");
+    const res = await syncStateToServerDetailed(state, activeClassroomId, force);
+    if (res.success) {
+      setSyncStatus("saved");
+      showToast("All changes saved to cloud!");
+    } else if (res.conflict) {
+      // Newer notes exist in the cloud from another device
+      if (syncStatus !== "unsaved") {
+        // Safe to pull: no unsaved local drafts on this screen
+        await handleManualPull(false);
+      } else {
+        // Unsaved local drafts exist: show ConflictModal to let teacher choose
+        setShowConflictModal(true);
+      }
+    } else if (res.offline) {
+      setSyncStatus("error");
+      showToast("Could not reach cloud (offline). Notes saved locally.");
+    } else {
+      setSyncStatus("error");
+      showToast(res.message || "Could not save to cloud.");
     }
   };
 

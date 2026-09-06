@@ -209,9 +209,32 @@ export async function POST(req: NextRequest) {
     const { state: existingState } = await readSavedState(classroomId);
     const isForce = body.force === true || searchParams.get("force") === "true";
 
+    const areEntriesIdentical =
+      Boolean(existingState?.entries) &&
+      JSON.stringify(toSave.entries) === JSON.stringify(existingState?.entries);
+
+    // If content is already identical and server has an equal or newer timestamp, treat as success
+    if (
+      areEntriesIdentical &&
+      existingState?.updatedAt &&
+      toSave.updatedAt &&
+      toSave.updatedAt <= existingState.updatedAt
+    ) {
+      const cloudActive = isCloudStorageConfigured();
+      return NextResponse.json({
+        success: true,
+        state: existingState,
+        storage: {
+          mode: cloudActive ? "cloud" : "local",
+          cloudConfigured: cloudActive,
+        },
+      });
+    }
+
     // Guard against stale clients overwriting newer server data unless force is explicitly set
     if (
       !isForce &&
+      !areEntriesIdentical &&
       existingState &&
       existingState.updatedAt &&
       toSave.updatedAt &&

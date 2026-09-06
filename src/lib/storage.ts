@@ -198,16 +198,24 @@ export async function fetchServerState(classroomId?: ClassroomId): Promise<AppSt
   return null;
 }
 
-export async function syncStateToServer(
+export interface SyncResult {
+  success: boolean;
+  conflict?: boolean;
+  offline?: boolean;
+  message?: string;
+  serverUpdatedAt?: number;
+}
+
+export async function syncStateToServerDetailed(
   state: AppState,
   classroomId?: ClassroomId,
   force: boolean = false
-): Promise<boolean> {
+): Promise<SyncResult> {
   const cid: ClassroomId = classroomId || state.classroomId || getActiveClassroomId();
   const toSync: AppState = {
     ...state,
     classroomId: cid,
-    updatedAt: state.updatedAt || Date.now(),
+    updatedAt: force ? Date.now() : (state.updatedAt || Date.now()),
   };
   saveLocalState(toSync, cid);
   try {
@@ -218,13 +226,39 @@ export async function syncStateToServer(
     });
     if (res.ok) {
       setLastSyncedTimestamp(cid, toSync.updatedAt || Date.now());
-      return true;
+      return { success: true };
     }
-    return false;
-  } catch (e) {
+    if (res.status === 409) {
+      const data = await res.json().catch(() => ({}));
+      return {
+        success: false,
+        conflict: true,
+        message: data.message || "Server has newer notes. Please pull from cloud before syncing.",
+        serverUpdatedAt: data.serverUpdatedAt,
+      };
+    }
+    const data = await res.json().catch(() => ({}));
+    return {
+      success: false,
+      message: data.error || data.message || `Server returned error (${res.status})`,
+    };
+  } catch (e: any) {
     console.warn(`Server sync failed for ${cid} (offline or network error):`, e);
-    return false;
+    return {
+      success: false,
+      offline: true,
+      message: e?.message || "Offline or network error",
+    };
   }
+}
+
+export async function syncStateToServer(
+  state: AppState,
+  classroomId?: ClassroomId,
+  force: boolean = false
+): Promise<boolean> {
+  const res = await syncStateToServerDetailed(state, classroomId, force);
+  return res.success;
 }
 
 export interface PullResult {
