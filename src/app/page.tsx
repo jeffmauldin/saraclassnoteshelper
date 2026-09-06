@@ -168,7 +168,8 @@ function DailyDashboardContent() {
   };
 
   // Manual or automatic cloud sync
-  const triggerSync = async (force = false) => {
+  const triggerSync = async (forceParam: boolean | unknown = false) => {
+    const force = forceParam === true;
     setSyncStatus("syncing");
     const res = await syncStateToServerDetailed(state, activeClassroomId, force);
     if (res.success) {
@@ -185,7 +186,7 @@ function DailyDashboardContent() {
       }
     } else if (res.offline) {
       setSyncStatus("error");
-      showToast("Could not reach cloud (offline). Notes saved locally.");
+      showToast(res.message || "Could not reach cloud (offline). Notes saved locally.");
     } else {
       setSyncStatus("error");
       showToast(res.message || "Could not save to cloud.");
@@ -394,7 +395,7 @@ function DailyDashboardContent() {
       <Navbar
         currentDate={state.currentDate}
         syncStatus={syncStatus}
-        onManualSync={triggerSync}
+        onManualSync={() => triggerSync(false)}
         onPullCloud={() => handleManualPull(false)}
         isPulling={isPulling}
         onLogout={logout}

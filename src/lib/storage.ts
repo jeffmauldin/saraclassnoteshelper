@@ -251,8 +251,9 @@ export interface SyncResult {
 export async function syncStateToServerDetailed(
   state: AppState,
   classroomId?: ClassroomId,
-  force: boolean = false
+  forceParam: boolean | unknown = false
 ): Promise<SyncResult> {
+  const force = forceParam === true;
   const cid: ClassroomId = classroomId || state.classroomId || getActiveClassroomId();
   const toSync: AppState = {
     ...state,
@@ -297,8 +298,9 @@ export async function syncStateToServerDetailed(
 export async function syncStateToServer(
   state: AppState,
   classroomId?: ClassroomId,
-  force: boolean = false
+  forceParam: boolean | unknown = false
 ): Promise<boolean> {
+  const force = forceParam === true;
   const res = await syncStateToServerDetailed(state, classroomId, force);
   return res.success;
 }
