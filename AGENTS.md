@@ -38,6 +38,11 @@ Welcome! This document provides technical context, architecture guidelines, and 
      - Bandwidth-friendly tab resume auto-check (`visibilitychange` / focus) throttled to 60+ seconds (zero battery-draining polling).
      - Local draft conflict protection via `ConflictModal`: incoming updates never silently overwrite un-synced notes.
   10. **Zero-Cost Email Sending**: Google App Password SMTP, Brevo API, and Test Simulator Mode.
+  11. **Dark / Light Mode & Eye-Friendly Ergonomics**:
+     - Instant 1-tap toggle (Sun/Moon) in the top navigation bar.
+     - Full theme manager in Settings (System preference, Light, or Dark).
+     - Native form controls styled with `color-scheme: dark` to prevent white flashes on dropdown open.
+     - Ergonomically tuned palette: Slate Blue / Steel Blue primary, Sage / Mineral Green sync status, Warm Bronze / Ochre Admin badge, and Terracotta alerts to eliminate blue-light glare and neon eye fatigue.
 
 ---
 
@@ -92,9 +97,10 @@ Welcome! This document provides technical context, architecture guidelines, and 
 │   │   ├── emailFormatter.ts  # Plain-text email generator with date stamps
 │   │   ├── emailSender.ts     # Multi-provider email engine
 │   │   ├── speech.ts          # Web Speech API helper
-│   │   └── storage.ts         # Local-first client cache and sync engine
+│   │   ├── storage.ts         # Local-first client cache and sync engine
+│   │   └── theme.tsx          # Dark/Light theme provider and system preference detector
 │   └── tests/
-│       ├── testSuite.ts       # Main test suite (53 assertions covering classrooms, sync & cloud storage)
+│       ├── testSuite.ts       # Main test suite (58 assertions covering classrooms, sync & cloud storage)
 │       ├── emailFormatter.test.ts # Tests for individual & master emails
 │       ├── state.test.ts      # Tests for reset and defaults
 │       └── validation.test.ts # Tests for email delivery safeguards
@@ -105,7 +111,7 @@ Welcome! This document provides technical context, architecture guidelines, and 
 ## 🔧 Useful Commands
 
 ```bash
-# Run automated test suite (53 assertions)
+# Run automated test suite (58 assertions)
 npm test
 
 # Start local development server

@@ -54,11 +54,21 @@ The **Classroom Daily Log & Parent Reporting System** has been built, tested, an
 - Live preview showing the exact plain-text emails generated for each individual student and the master daily summary.
 - **"Run Dry-Run Test"** button to simulate the complete email dispatch flow.
 
+### 6. 🎨 Eye-Friendly Ergonomics & Dark/Light Theme System
+- **1-Tap Navbar Theme Toggle**: Instant Sun/Moon toggle in the top bar.
+- **Appearance Manager in Settings**: Switch between System Preference, Light Mode, or Dark Mode.
+- **Zero White-Flash Dropdown Engine**: Native form controls styled with `color-scheme: dark` and immediate solid dark CSS variables to prevent white flashes on dropdown mount.
+- **Ergonomically Tuned Palette**:
+  - **Slate Blue / Steel Blue** (`#3b5a82` / `#2d4666`): Replaces electric cyan, reducing chromatic aberration and ciliary muscle fatigue.
+  - **Sage / Mineral Green** (`#3f6b4f` / `#9ebfa9`): Replaces electric neon mint for "Synced to Cloud" status and note checkmarks.
+  - **Warm Bronze / Ochre** (`#836539` / `#d3be9f`): Replaces fluorescent orange for the "Admin" badge and unsaved indicators.
+  - **Terracotta / Crimson** (`#8e3f3f` / `#d9b0b0`): Restful, non-jarring alert tones.
+
 ---
 
 ## 🧪 Verification & Automated Test Results
 
-The test suite in [`src/tests/testSuite.ts`](file:///workspaces/saraclassnoteshelper/src/tests/testSuite.ts) was executed and passed with **100% success (53/53 assertions)**:
+The test suite in [`src/tests/testSuite.ts`](file:///workspaces/saraclassnoteshelper/src/tests/testSuite.ts) was executed and passed with **100% success (58/58 assertions)**:
 
 ```text
 ========================================================
@@ -118,9 +128,14 @@ The test suite in [`src/tests/testSuite.ts`](file:///workspaces/saraclassnoteshe
   ✅ PASS: Local draft was safeguarded against loss
   ✅ PASS: Force pull cleanly overwrites when user explicitly confirms
   ✅ PASS: Cloud state accepted upon explicit user confirmation
+  ✅ PASS: Switching student tabs on Device 2 does not push stale state to cloud
+  ✅ PASS: Device 2 pullServerState status is 'updated' after switching to Sam
+  ✅ PASS: Device 2 successfully receives Sam's notes from Device 1 after switching student tab
+  ✅ PASS: Unforced stale state push is rejected when server has newer notes
+  ✅ PASS: Forced state push succeeds when user explicitly confirms in conflict modal
 
 ========================================================
- 📊 FINAL RESULTS: 53 PASSED, 0 FAILED
+ 📊 FINAL RESULTS: 58 PASSED, 0 FAILED
 ========================================================
 ```
 

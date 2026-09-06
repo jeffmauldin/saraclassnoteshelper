@@ -27,6 +27,7 @@ A lightweight, mobile-friendly and laptop-friendly daily reporting application b
   * **Test Simulator Mode**: Zero-setup preview and testing without sending real emails.
 * **🔄 Cross-Device Smart Sync & Pull**: Make changes on your laptop or phone; state stays synced with snappy 0ms instant local editing, a dedicated "Pull Cloud" button in the header, smart tab-resume auto-check (zero battery-draining polling), and draft conflict safeguards.
 * **🔐 Role-Based Passcodes & 30-Day Persistence**: Dedicated teacher logins and an Admin master mode with 30-day "Remember this device" persistence.
+* **🎨 Dark / Light Mode & Eye-Friendly Ergonomics**: 1-tap navbar theme toggle, Settings theme manager (System/Light/Dark), zero-flash native dropdown controls, and an anti-glare color palette (Slate Blue, Sage Green, Warm Bronze, and Terracotta) tuned to eliminate eye fatigue.
 
 ---
 
