@@ -158,3 +158,13 @@ The test suite in [`src/tests/testSuite.ts`](file:///workspaces/saraclassnoteshe
    - Tap **Email Preview** to inspect plain-text parent reports and master summary.
    - Tap **Send All Email Reports** (or test in Simulator mode).
    - Tap **Reset for Next Day** to test the next-day clearing guard.
+
+---
+
+## 📧 Teacher Setup: Google App Passwords
+For teachers ready to send real emails from their personal `@gmail.com` accounts, see the complete, teacher-friendly guide in [`README.md`](file:///workspaces/saraclassnoteshelper/README.md#step-by-step-guide-setting-up-google-app-password-for-sara-or-megan) under **Step-by-Step Guide: Setting Up Google App Password for Sara (or Megan)**.
+
+---
+
+## 🔮 Future Enhancements (Backlog)
+- **Bulk CSV / Spreadsheet Import**: Upload student rosters and category options via `.csv` file to avoid repetitive manual clicking when onboarding large classes.

@@ -121,28 +121,70 @@ Each classroom comes pre-loaded with demo students configured with **Gmail sub-a
 ```bash
 npm test
 ```
-Runs 53 automated assertions covering email generation, multi-classroom state isolation, cross-device smart sync, local conflict safeguards, cloud storage detection, and safeguard validation.
+Runs 58 automated assertions covering email generation, multi-classroom state isolation, cross-device smart sync, local conflict safeguards, cloud storage detection, and safeguard validation.
 
 ---
 
-## ⚙️ Setting Up Real Email Sending
+## 📧 Step-by-Step Guide: Setting Up Google App Password for Sara (or Megan)
 
-When you are ready to send live emails:
+This section provides complete, friendly instructions for generating a secure Google 16-letter App Password and entering it into the website. You can share this section directly with Sara or walk her through it.
 
-### Option A: Using Gmail with Google App Password (Recommended)
-1. Log into your Google Account and visit [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords).
-2. Enter a name like "Class Daily Reports" and click **Create**.
-3. Google will display a 16-letter password (e.g. `abcd efgh ijkl mnop`).
-4. In the app, go to **Settings** → **Email Delivery Setup**:
-   * Select **✉️ Gmail (App Password)**.
-   * Enter your Gmail address and paste the 16-letter password.
-   * Click **Save Changes**.
-5. *Tip: You can test with your own Gmail first, and later switch it to Sara's or Megan's Gmail!*
+### Why Is an "App Password" Required?
+Google does not allow third-party web apps to use your personal Gmail login password. Instead, Google provides an **App Password**—a dedicated 16-letter code that grants secure permission for the Classroom Notes app to send daily parent emails on your behalf without exposing your real password.
+
+---
+
+### Part 1: Generate the 16-Letter App Password in Google
+
+> **Prerequisite**: Your Google Account must have **2-Step Verification** enabled. If you haven't turned it on yet, visit [myaccount.google.com/signinoptions/two-step-verification](https://myaccount.google.com/signinoptions/two-step-verification) and follow the prompts.
+
+1. In your browser, go to:
+   👉 **[myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)**
+   *(If prompted, sign in with the Gmail account you want to send reports from).*
+2. Under **"App name"**, type a descriptive label such as:
+   `Classroom Notes`
+3. Click the blue **Create** button.
+4. Google will display a popup with:
+   **"Generated app password"** containing a **16-letter code** in a yellow box (formatted in 4 groups of 4 letters, e.g. `abcd efgh ijkl mnop`).
+5. **Copy this 16-letter code** or write it down.
+   *(Note: Google only displays this code once. If you ever close the window or lose it, you can delete it and generate a new one at any time).*
+6. Click **Done**.
+
+---
+
+### Part 2: Add the App Password to the Website Setup
+
+1. Open the Classroom Notes website on your phone, tablet, or computer.
+2. Enter your classroom passcode (`sara2026` for Sara, `megan2026` for Megan, or `admin2026`).
+3. Click or tap the **Settings** gear icon (⚙️) in the top navigation bar.
+4. In the Settings tabs, select **Email Delivery Setup** (✉️ Mail icon).
+5. Under **Email Sending Method**, select the **✉️ Gmail (App Password)** card.
+   *(Note: The password field only appears when Gmail is selected).*
+6. Fill in the fields:
+   * **Teacher / Sender Display Name**: Enter what parents will see as the sender (e.g. `Sara (Special Education Teacher)`).
+   * **Gmail Address**: Enter your full Gmail address (e.g. `sara.teacher@gmail.com`).
+   * **Google 16-Letter App Password**: Paste the 16-letter code from Part 1 (the system automatically removes spaces, so `abcd efgh ijkl mnop` works directly).
+   * **Master Daily Summary Recipients**: Enter your email address (and any assistants or testers) so you receive the consolidated daily summary each afternoon.
+7. Click the blue **Save Changes** button at the top right of the Settings page.
+
+---
+
+### Part 3: Verify with a Quick Test
+1. Return to the main dashboard by clicking **Back to Dashboard** (or the title in the navbar).
+2. Click **Email Preview** in the top navigation bar to verify your sender name and recipient emails.
+3. On the dashboard, fill out notes or select quick chips for a student.
+4. Click **Send All Email Reports** and confirm the preview modal.
+5. Check your Gmail inbox—the reports will arrive within seconds!
+
+---
+
+## ⚙️ Alternative Email Sending Providers
 
 ### Option B: Using Brevo (Free 300 emails/day)
 1. Sign up for a free account at [brevo.com](https://www.brevo.com).
 2. Grab your free API key under **SMTP & API**.
-3. Paste the API key into **Settings** → **Email Delivery Setup**.
+3. Paste the API key into **Settings** → **Email Delivery Setup** under the **⚡ Brevo API** option.
+
 
 ---
 
